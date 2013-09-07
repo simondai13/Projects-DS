@@ -6,6 +6,9 @@ import java.io.Serializable;
 public class TransactionalFileInputStream extends InputStream implements
 		Serializable {
 
+	public TransactionalFileInputStream(String filename)
+	{}
+	
 	@Override
 	public int read() throws IOException {
 		// TODO Auto-generated method stub
