@@ -1,31 +1,58 @@
-import java.util.TreeMap;
+import java.lang.reflect.*;
+import java.util.*;
 
 
 public class ProcessManager {
-	//Structure to hold info on running process
-	private class ProcessInfo{
-		String url;
-		int portNum;
-		long processID;
-		boolean isRunning;
-		
-		public ProcessInfo(String url, int portNum, long processID){
-			isRunning=true;
-			this.url=url;
-			this.processID=processID;
-			this.portNum=portNum;
-		}
-		
-	}
-	
-	//List of processes maped to their ID's
-	TreeMap processTable;
+
+	private List processes;
 	
 	public ProcessManager(){
-		processTable = new TreeMap();
+		
+		
 	}
 	
-	public long RunProcess(MigratableProcess p){return 0;}
-	public boolean MigrateProcess(String destination){return true;}
-	public boolean TerminateProcess(){return true;}
+	public Object startProcess(String className, String[] args){
+		
+		Object instance = null;
+		try {
+			Class<?> newClass = Class.forName(className);
+			Constructor<?> cons = newClass.getConstructor();
+			instance = cons.newInstance(args);
+		} catch (ClassNotFoundException e) {
+			
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+
+			e.printStackTrace();
+		}
+		
+		if(!(instance instanceof MigratableProcess)){
+			
+			//Handle
+		}
+			
+		
+		return instance;
+	}
+	
+	public void migrateProcess(){
+		
+	
+	}
+	
 }
