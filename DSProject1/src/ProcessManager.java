@@ -57,15 +57,27 @@ public class ProcessManager {
 		}
 			
 		//Start executing the process
-		Thread processThread = new Thread(newProcess);
-		processThread.run();
+		runProcess(newProcess);
 		
 		return newProcess;
 	}
 	
-	public void migrateProcess(){
-		
+	public static void runProcess(MigratableProcess p) {
+		Thread processThread = new Thread(p);
+		processThread.run();
+	}
 	
+	public void migrateProcess(Inet4Address newAdress, MigratableProcess p){
+		try{
+			Socket client = new Socket(newAdress,PORT_NUM);
+			OutputStream out = client.getOutputStream();
+			OutputStream buffer = new BufferedOutputStream(out);
+			ObjectOutput output = new ObjectOutputStream(buffer);
+			output.writeObject(p);
+			output.close();
+		}catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	//The ability to specify a command-line port is added in the event 
@@ -91,31 +103,28 @@ public class ProcessManager {
 			 System.out.println("Could not listen on port " +Integer.toString(PORT_NUM));
 			 System.exit(-1);
 		}
-		 Socket client;
-		 try{
-			 client = server.accept();
-			 InputStream in = client.getInputStream();
-			 //Parse the classname out of the stream
-			 do {
+		 while(true) {
+			 Socket client;
+			 try{
+				 client = server.accept();
+				 InputStream in = client.getInputStream();
+				 //Now we de-serialize the object
+				 InputStream buffer= new BufferedInputStream(in);
+				 ObjectInput obj = new ObjectInputStream(buffer);
+				 MigratableProcess process = null;
 				 try{
-					 byte[] singleByte = new byte[1];
-					 singleByte[0]= (byte)in.read();
-					 
-					 Byte.toString(in.read());
-				 }
-				 catch (IOException e) {
-					 System.out.println("Error Reading Input");
+					 process = (MigratableProcess) obj.readObject();
+				 } catch (ClassNotFoundException e) {
+					 e.printStackTrace();
 					 System.exit(-1);
 				 }
-				 
-			 }while(Byte.toString(in.read()));
+				 //Run the process on this machine
+				 runProcess(process);
 			 
-			 InputStream buffer= new BufferedInputStream(in);
-			 ObjectInput obj = new ObjectInputStream(buffer);
-			 
-		 } catch (IOException e) {
-			 System.out.println("Accept failed");
-			 System.exit(-1);
+			 } catch (IOException e) {
+				 System.out.println("Accept failed");
+				 System.exit(-1);
+			 }
 		 }
 		 
 	}
