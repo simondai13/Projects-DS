@@ -10,6 +10,7 @@ public class ProcessManager {
 	public static ServerSocket server;
 	private List processes;
 	private List clients;
+	public static Object fileLock;
 	
 	public ProcessManager(){
 		

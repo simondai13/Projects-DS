@@ -1,0 +1,9 @@
+
+
+Example Processes:
+
+We included 3 classes to demonstrate process migration in our framework. The three classes all implement MigratableProcess.
+
+-TimeBomb: The TimeBomb class is instantiated with a single integer parameter, the "counter." When run, the process continuously decrements the counter, until it reaches 0, when the time bomb "goes off" by outputting "boom" to std.out. The process can be suspended by calling the .suspend() method, which pauses the program after the next decrement operation completes. The state of the program is only contained in the counter instance variable. When migrated, the process should maintain the state of the counter, and upon resuming, should start counting down from the counter value. Notice that this class does not use any file IO, so it only tests the basic process migration properties. This class is used primarily for early testing purposes.
+
+-TimeBombFile: The TimeBombFile class has the same purpose as the TimeBomb class; however, it includes file IO. It is instantiated with an input file, which should contain a single number, the countdown value, and an output file, where the class will output to. The class will output each countdown number, until it reaches 0, when it will output "boom." This class is a simple process that incorporates file IO, so it is good for testing process migration with file IO, and synchronization/locking.

@@ -14,23 +14,26 @@ public class TimeBomb implements MigratableProcess{
 		suspended = false;
 	}
 	
-	public void decrementTime(){
-		
-		countdown--;
-	}
-
 	@Override
 	public void run() {
 
 		while(!suspended && countdown > 0){
-			
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {}
+
 			countdown--;
+			System.out.println(countdown);
 		}
 		
+		if(countdown == 0)
+			System.out.println("Boom");
+		suspended = false;
 	}
 
 	@Override
 	public void suspend() {
 		suspended=true;
+		while(suspended);
 	}
 }
