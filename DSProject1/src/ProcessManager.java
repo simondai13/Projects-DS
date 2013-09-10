@@ -1,11 +1,15 @@
 import java.lang.reflect.*;
 import java.util.*;
+import java.net.*;
+import java.io.*;
 
 
 public class ProcessManager {
 
 	public static int PORT_NUM = 5555;
+	public static ServerSocket server;
 	private List processes;
+	private List clients;
 	
 	public ProcessManager(){
 		
@@ -79,6 +83,40 @@ public class ProcessManager {
 			}
 		}
 		PORT_NUM = port;
+		
+		 try{
+			 server = new ServerSocket(PORT_NUM); 
+		 } catch (IOException e) {
+			 System.out.println("Could not listen on port " +Integer.toString(PORT_NUM));
+			 System.exit(-1);
+		}
+		 Socket client;
+		 try{
+			 client = server.accept();
+			 InputStream in = client.getInputStream();
+			 //Parse the classname out of the stream
+			 do {
+				 try{
+					 byte[] singleByte = new byte[1];
+					 singleByte[0]= (byte)in.read();
+					 
+					 Byte.toString(in.read());
+				 }
+				 catch (IOException e) {
+					 System.out.println("Error Reading Input");
+					 System.exit(-1);
+				 }
+				 
+			 }while(Byte.toString(in.read()));
+			 
+			 InputStream buffer= new BufferedInputStream(in);
+			 ObjectInput obj = new ObjectInputStream(buffer);
+			 
+		 } catch (IOException e) {
+			 System.out.println("Accept failed");
+			 System.exit(-1);
+		 }
+		 
 	}
 	
 }
