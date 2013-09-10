@@ -17,6 +17,11 @@ public class TransactionalFileOutputStream extends OutputStream implements
 		fileLocation = 0;
 	}
 
+	public TransactionalFileOutputStream(String filename){
+		
+		this.filename = filename;
+		fileLocation = 0;
+	}
 	
 	@Override
 	public void write(int b) throws IOException {
@@ -24,7 +29,7 @@ public class TransactionalFileOutputStream extends OutputStream implements
 		synchronized(ProcessManager.fileLock){
 			
 			File fileToRead = new File(filename);
-			RandomAccessFile stream = new RandomAccessFile(fileToRead, "w");
+			RandomAccessFile stream = new RandomAccessFile(fileToRead, "rw");
 			stream.seek(fileLocation);
 			
 			stream.write(b);

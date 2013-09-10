@@ -4,17 +4,17 @@ import java.net.*;
 import java.io.*;
 
 
-public class ProcessManager {
+public class ProcessManager implements Runnable {
 
-	public static int PORT_NUM = 5555;
-	public static ServerSocket server;
-	private List processes;
-	private List clients;
-	public static Object fileLock;
+	private int port_num;
+	private ServerSocket server;
+	private List<MigratableProcess> processes;
+	public static Object fileLock = new Object();
 	
-	public ProcessManager(){
+	public ProcessManager(int port_num){
 		
-		
+		this.port_num = port_num;
+		processes = new ArrayList<MigratableProcess>();
 	}
 	
 	public MigratableProcess startProcess(String className, String[] args){
@@ -22,8 +22,12 @@ public class ProcessManager {
 		Object instance = null;
 		try {
 			Class<?> newClass = Class.forName(className);
-			Constructor<?> cons = newClass.getConstructor();
-			instance = cons.newInstance(args);
+			Class<?>[] params = new Class[1];
+			params[0] = Class.forName("[Ljava.lang.String;");
+			Constructor<?> cons = newClass.getConstructor(params);
+			Object[] params1 = new Object[1];
+			params1[0] = args;
+			instance = cons.newInstance(params1);
 		} catch (ClassNotFoundException e) {
 			
 			e.printStackTrace();
@@ -62,14 +66,16 @@ public class ProcessManager {
 		return newProcess;
 	}
 	
-	public static void runProcess(MigratableProcess p) {
+	private void runProcess(MigratableProcess p) {
 		Thread processThread = new Thread(p);
-		processThread.run();
+		processes.add(p);
+		processThread.start();
 	}
 	
-	public void migrateProcess(Inet4Address newAdress, MigratableProcess p){
+	public void migrateProcess(InetAddress newAddress, MigratableProcess p){
 		try{
-			Socket client = new Socket(newAdress,PORT_NUM);
+			p.suspend();
+			Socket client = new Socket(newAddress,port_num);
 			OutputStream out = client.getOutputStream();
 			OutputStream buffer = new BufferedOutputStream(out);
 			ObjectOutput output = new ObjectOutputStream(buffer);
@@ -84,24 +90,14 @@ public class ProcessManager {
 	//that the default port PORT_NUM is unavailable.  However, it is the 
 	//responsibility of the user to ensure that the port number is consistent
 	//across nodes
-	public static void main(String [] args)
+	public void run()
 	{
-		int port=0;
-		if(args.length > 0){
-			try{
-				port = Integer.parseInt(args[0]);
-			}catch (NumberFormatException e) {
-				System.out.println("Error, invalid port argument, using default: " + Integer.toString(PORT_NUM));
-				port = PORT_NUM;
-			}
-		}
-		PORT_NUM = port;
-		
 		 try{
-			 server = new ServerSocket(PORT_NUM); 
+			 server = new ServerSocket(port_num); 
 		 } catch (IOException e) {
-			 System.out.println("Could not listen on port " +Integer.toString(PORT_NUM));
-			 System.exit(-1);
+			 System.out.println("Could not listen on port " +Integer.toString(port_num));
+			 e.printStackTrace();
+			 //System.exit(-1);
 		}
 		 while(true) {
 			 Socket client;

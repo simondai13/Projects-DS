@@ -14,6 +14,11 @@ public class TimeBomb implements MigratableProcess{
 		suspended = false;
 	}
 	
+	public String toString(){
+		
+		return countdown+"\n";
+	}
+	
 	@Override
 	public void run() {
 
