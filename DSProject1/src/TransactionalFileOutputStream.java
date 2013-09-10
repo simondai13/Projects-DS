@@ -10,24 +10,18 @@ public class TransactionalFileOutputStream extends OutputStream implements
 
 	private String filename;
 	private long fileLocation;
-	Object lock;
 
 	public TransactionalFileOutputStream(String filename, boolean someBool){
-		
+
+		this.filename = filename;
+		fileLocation = 0;
 	}
 
-	public TransactionalFileOutputStream(String filename, Object lock){
-		
-		this.filename = filename;
-		this.fileLocation = 0;
-		this.lock = lock;
-	}
-	
 	
 	@Override
 	public void write(int b) throws IOException {
 		
-		synchronized(lock){
+		synchronized(ProcessManager.fileLock){
 			
 			File fileToRead = new File(filename);
 			RandomAccessFile stream = new RandomAccessFile(fileToRead, "w");

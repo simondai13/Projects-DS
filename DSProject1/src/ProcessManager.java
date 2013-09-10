@@ -6,6 +6,7 @@ public class ProcessManager {
 
 	public static int PORT_NUM = 5555;
 	private List processes;
+	public static Object fileLock;
 	
 	public ProcessManager(){
 		
