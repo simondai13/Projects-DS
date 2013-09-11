@@ -27,22 +27,26 @@ public class BadFileCopy implements MigratableProcess{
 
 		PrintStream out = new PrintStream(outFile);
 		DataInputStream in = new DataInputStream(inFile);
-
+		boolean eof = false;
+		
 		try {
-			while (!suspended) {
+			while (!suspended && !eof) {
 				
-				out.write(in.read());
+				int read = in.read();
+				if(read == -1)
+					eof = true;
+				else
+					out.write(read);
 				
 				try {
 					Thread.sleep(50);
 				} catch (InterruptedException e) {}
 			}
-		} catch (EOFException e) {
-			return;
 		} catch (IOException e) {
 			return;
 		}
 
+		
 		suspended=false;
 	}
 
@@ -50,5 +54,11 @@ public class BadFileCopy implements MigratableProcess{
 	public void suspend() {
 		suspended=true;
 		while(suspended);
+		try {
+			outFile.write(4);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }
