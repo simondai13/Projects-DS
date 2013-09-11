@@ -10,15 +10,18 @@ public class Main {
 		
 		Thread t1 = new Thread(pm);
 		t1.start();
-		InetAddress adr = InetAddress.getLocalHost();
 		
+		/*
 		String[] s = {"100"};
 		System.out.println("Starting process TimeBomb");
 		MigratableProcess mp = pm.startProcess("TimeBomb", s);
 		
 		Thread.sleep(500);
 		System.out.println("sending migration request for TimeBomb");
-		pm.migrateProcess(adr, mp);
+		
+		pm.migrateProcess("67.186.29.121", mp);
+		
+		
 		String[] params = {"105","TimeBombOut.txt"};
 		System.out.println("Starting process TimeBombFile");
 		MigratableProcess mp2 = pm.startProcess("TimeBombFile", params);
@@ -34,7 +37,7 @@ public class Main {
 		Thread.sleep(300);
 		System.out.println("sending migration request for BadFileCopy");
 		pm.migrateProcess(adr, mp3);
-		
+		*/
 		
 		
 		System.out.println("DONE");

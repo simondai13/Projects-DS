@@ -72,10 +72,11 @@ public class ProcessManager implements Runnable {
 		processThread.start();
 	}
 	
-	public void migrateProcess(InetAddress newAddress, MigratableProcess p){
+	public void migrateProcess(String newAddress, MigratableProcess p){
 		try{
 			p.suspend();
 			synchronized(ProcessManager.fileLock){
+				System.out.println(newAddress + " " + port_num);
 				Socket client = new Socket(newAddress,port_num);
 				OutputStream out = client.getOutputStream();
 				OutputStream buffer = new BufferedOutputStream(out);
@@ -111,15 +112,13 @@ public class ProcessManager implements Runnable {
 				 InputStream buffer= new BufferedInputStream(in);
 				 ObjectInput obj = new ObjectInputStream(buffer);
 				 MigratableProcess process = null;
-				 try{
-					 process = (MigratableProcess) obj.readObject();
-				 } catch (ClassNotFoundException e) {
-					 e.printStackTrace();
-					 System.exit(-1);
-				 }
+				 process = (MigratableProcess) obj.readObject();
 				 //Run the process on this machine
 				 runProcess(process);
 			 
+			 } catch (ClassNotFoundException e) {
+				 e.printStackTrace();
+				 System.exit(-1);
 			 } catch (IOException e) {
 				 System.out.println("Accept failed");
 				 System.exit(-1);
