@@ -75,12 +75,15 @@ public class ProcessManager implements Runnable {
 	public void migrateProcess(InetAddress newAddress, MigratableProcess p){
 		try{
 			p.suspend();
-			Socket client = new Socket(newAddress,port_num);
-			OutputStream out = client.getOutputStream();
-			OutputStream buffer = new BufferedOutputStream(out);
-			ObjectOutput output = new ObjectOutputStream(buffer);
-			output.writeObject(p);
-			output.close();
+			synchronized(ProcessManager.fileLock){
+				Socket client = new Socket(newAddress,port_num);
+				OutputStream out = client.getOutputStream();
+				OutputStream buffer = new BufferedOutputStream(out);
+				ObjectOutput output = new ObjectOutputStream(buffer);
+				output.writeObject(p);
+				output.close();
+				client.close();
+			}
 		}catch (IOException e) {
 			e.printStackTrace();
 		}
