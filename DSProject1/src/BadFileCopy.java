@@ -42,6 +42,8 @@ public class BadFileCopy implements MigratableProcess{
 					Thread.sleep(50);
 				} catch (InterruptedException e) {}
 			}
+			inFile.close();
+			outFile.close();
 		} catch (IOException e) {
 			return;
 		}

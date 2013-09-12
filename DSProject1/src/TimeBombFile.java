@@ -39,8 +39,14 @@ public class TimeBombFile implements MigratableProcess{
 			
 		}
 		
-		if(countdown == 0)
+		if(countdown == 0){
 			out.println("Boom");
+			try{
+				outFile.close();
+			} catch(IOException e) {
+				e.printStackTrace();
+			}
+		}
 		
 		suspended=false;
 	}
