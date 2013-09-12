@@ -71,6 +71,8 @@ public class ProcessManager implements Runnable {
 		processThread.start();
 	}
 	
+	//Add functionality for suspend, query, etc
+	
 	public void migrateProcess(String newAddress, int port, MigratableProcess p){
 		try{
 			p.suspend();
@@ -112,8 +114,7 @@ public class ProcessManager implements Runnable {
 				 runProcess(process);
 			 
 			 } catch (ClassNotFoundException e) {
-				 e.printStackTrace();
-				 System.exit(-1);
+				 //Send response
 			 } catch (IOException e) {
 				 System.out.println("Accept failed");
 				 System.exit(-1);
