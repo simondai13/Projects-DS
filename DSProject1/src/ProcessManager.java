@@ -53,8 +53,7 @@ public class ProcessManager implements Runnable {
 		
 		MigratableProcess newProcess=null;
 		if(!(instance instanceof MigratableProcess)){
-			
-			//Handle
+			return null;
 		}
 		else {
 			newProcess=(MigratableProcess)instance;
@@ -72,12 +71,13 @@ public class ProcessManager implements Runnable {
 		processThread.start();
 	}
 	
-	public void migrateProcess(String newAddress, MigratableProcess p){
+	//Add functionality for suspend, query, etc
+	
+	public void migrateProcess(String newAddress, int port, MigratableProcess p){
 		try{
 			p.suspend();
 			synchronized(ProcessManager.fileLock){
-				System.out.println(newAddress + " " + port_num);
-				Socket client = new Socket(newAddress,port_num);
+				Socket client = new Socket(newAddress,port);
 				OutputStream out = client.getOutputStream();
 				OutputStream buffer = new BufferedOutputStream(out);
 				ObjectOutput output = new ObjectOutputStream(buffer);
@@ -89,11 +89,8 @@ public class ProcessManager implements Runnable {
 			e.printStackTrace();
 		}
 	}
-	
-	//The ability to specify a command-line port is added in the event 
-	//that the default port PORT_NUM is unavailable.  However, it is the 
-	//responsibility of the user to ensure that the port number is consistent
-	//across nodes
+
+
 	public void run()
 	{
 		 try{
@@ -117,8 +114,7 @@ public class ProcessManager implements Runnable {
 				 runProcess(process);
 			 
 			 } catch (ClassNotFoundException e) {
-				 e.printStackTrace();
-				 System.exit(-1);
+				 //Send response
 			 } catch (IOException e) {
 				 System.out.println("Accept failed");
 				 System.exit(-1);

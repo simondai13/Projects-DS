@@ -1,9 +1,36 @@
+===Design/Framework===:
+Interfaces:
+Our only interface is the MigratableProcess interface, which extends the Runnable and Serializable interfaces. This groups all MigratableProcesses into one type which we can use to run/migrate in our ProcessManager class, where we do not know what classes we will be running. This abstraction allows our ProcessManager to run and migrate any type of class that implements MigratableProcess (can run because a MigratableProcess must implement Runnable, and can be migrated because it should implement suspend() and can be Serialized).
 
+Driver classes:
+The main driver class is the ProcessManager class, which does the bulk of the work regarding MigratableProcesses. We chose to make the ProcessManager implement Runnable, so to start a ProcessManager, one could simply create a new instance, and call run(). Starting a ProcessManager does not cause it to run any tasks, but does spin up a server socket, which listens for incoming requests. These requests are (usually) to migrate a task TO this ProcessManager. If a migration is made to this ProcessManager instance, we will accept the client connection, read in the object, deserialize it, and then run it by calling its .run() method. Also, a ProcessManager can be used to start new MigratableProcesses. We used Reflections to create an instance of a class given its name and arguments to its constructor (which should be of the form (String args[])), and then run it (if it implements MigratableProcess) in a new Thread. We create a new Thread so we can manage all of the processes running on a given ProcessManager (so we could suspend/resume a thread at any point).
 
-Example Processes:
+File IO classes: 
 
+We build a TransactionalFileInputStream and TransactionalFileOutputStream class to handle file IO in a way safe for process migration. 
+***Pending Ken's FD work
+
+Making MigratableProcesses:
+
+MigratableProcesses should implement the MigratableProcess interface, so they should (transitively) be implementing Runnable and Serializable. A MigratableProcess needs both run() and suspend() methods, along with a constructor that takes a String[] as its only argument. This allows them to be run, migrated, and instantiated by ProcessManagers. Also, after being suspended witha call to suspend(), the process should continue running where it left off when the run() method is called (assuming all of its instance variables remain intact). Then, these classes should be able to be managed by the ProcessManager.
+
+===Implementation/Bugs===:
+Our implementation should have full functionality for both starting and migrating processes that implement MigratableProcess. There should be no problems unless some sort of network error occurs, or some data is misentered, etc. There are no bugs to report at this time.
+
+Example MigratableProcesses
 We included 3 classes to demonstrate process migration in our framework. The three classes all implement MigratableProcess.
 
 -TimeBomb: The TimeBomb class is instantiated with a single integer parameter, the "counter." When run, the process continuously decrements the counter, until it reaches 0, when the time bomb "goes off" by outputting "boom" to std.out. The process can be suspended by calling the .suspend() method, which pauses the program after the next decrement operation completes. The state of the program is only contained in the counter instance variable. When migrated, the process should maintain the state of the counter, and upon resuming, should start counting down from the counter value. Notice that this class does not use any file IO, so it only tests the basic process migration properties. This class is used primarily for early testing purposes.
 
--TimeBombFile: The TimeBombFile class has the same purpose as the TimeBomb class; however, it includes file IO. It is instantiated with an input file, which should contain a single number, the countdown value, and an output file, where the class will output to. The class will output each countdown number, until it reaches 0, when it will output "boom." This class is a simple process that incorporates file IO, so it is good for testing process migration with file IO, and synchronization/locking.
+-TimeBombFile: The TimeBombFile class has the same purpose as the TimeBomb class; however, it includes file IO. It is instantiated with a countdown value, and an output file, where the class will output to. The class will output each countdown number, until it reaches 0, when it will output "boom." This class is a simple process that incorporates file IO, so it is good for testing process migration with file IO, and synchronization/locking.
+
+-BadFileCopy: The BadFileCopy class copies an input file to an output file by reading in bytes one at a time from the input file, while outputting them to an output file.
+
+===Required Libraries===:
+We only require jdk1.7. Also, when using file IO, a shared file system is required in order to maintain consistency in processes that use the files.
+
+===Running the project===:
+To run your own example classes, in a main function, you would first instantiate a ProcessManager*********************************************
+
+===Running our examples===:
+You would run the example classes the same way you would run your own MigratableProcess (detailed in the section above). We have included a Main.java class that contains a main function that runs all of our example classes, and tests the features of our program. By default, the processes get migrated to the local host, not across the network, but this can be easily changed by editing the address variable in the main function. 
