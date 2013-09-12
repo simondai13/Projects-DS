@@ -21,14 +21,9 @@ public class TransactionalFileOutputStream extends OutputStream implements
 		openFile=null;
 	}
 	
-	public TransactionalFileOutputStream(String filename, boolean what) {
-		this.filename = filename;
-		fileLocation = 0;
-		openFile=null;
-	}
 	
 	@Override
-	public void write(int c) throws IOException {
+	public void write(int c) throws FileNotFoundException, IOException {
 
 		synchronized(ProcessManager.fileLock){
 		
