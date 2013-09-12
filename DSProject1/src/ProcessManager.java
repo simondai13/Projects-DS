@@ -75,6 +75,7 @@ public class ProcessManager implements Runnable {
 	
 	public void migrateProcess(String newAddress, int port, MigratableProcess p){
 		try{
+			
 			p.suspend();
 			synchronized(ProcessManager.fileLock){
 				Socket client = new Socket(newAddress,port);
@@ -82,6 +83,7 @@ public class ProcessManager implements Runnable {
 				OutputStream buffer = new BufferedOutputStream(out);
 				ObjectOutput output = new ObjectOutputStream(buffer);
 				output.writeObject(p);
+				System.out.println("migrating");
 				output.close();
 				client.close();
 			}

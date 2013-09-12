@@ -33,8 +33,12 @@ public class BadFileCopy implements MigratableProcess{
 			while (!suspended && !eof) {
 				
 				int read = in.read();
-				if(read == -1)
+				if(read == -1){
+					
+					inFile.close();
+					outFile.close();
 					eof = true;
+				}
 				else
 					out.write(read);
 				
@@ -42,8 +46,6 @@ public class BadFileCopy implements MigratableProcess{
 					Thread.sleep(50);
 				} catch (InterruptedException e) {}
 			}
-			inFile.close();
-			outFile.close();
 		} catch (IOException e) {
 			return;
 		}
@@ -56,5 +58,6 @@ public class BadFileCopy implements MigratableProcess{
 	public void suspend() {
 		suspended=true;
 		while(suspended);
+		System.out.println("suspending");
 	}
 }
