@@ -5,15 +5,30 @@ import java.net.UnknownHostException;
 public class Main {
 
 	public static void main(String args[]) throws UnknownHostException, InterruptedException{
-
+/*
 		ProcessManager pm = new ProcessManager(1255);
 		
 		Thread t1 = new Thread(pm);
 		t1.start();
 		
-		String adr = "localhost";//"71.206.238.246";
+		String adr = "localhost";
+
+		String[] s = {"100"};
+		System.out.println("Starting process TimeBomb");
 		
-		/*
+		MigratableProcess mp = new TimeBomb(s);
+		pm.startProcess(mp);
+		
+		Thread.sleep(500);
+		System.out.println(pm.runningOn(mp));
+		System.out.println("sending migration request for TimeBomb");
+		
+		pm.migrateProcess(adr,1255, mp);
+		
+		
+		//"71.206.238.246";
+		
+		
 		String[] s = {"100"};
 		System.out.println("Starting process TimeBomb");
 		MigratableProcess mp = pm.startProcess("TimeBomb", s);
