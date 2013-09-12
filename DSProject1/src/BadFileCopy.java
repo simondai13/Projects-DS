@@ -54,11 +54,5 @@ public class BadFileCopy implements MigratableProcess{
 	public void suspend() {
 		suspended=true;
 		while(suspended);
-		try {
-			outFile.write(4);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 }
