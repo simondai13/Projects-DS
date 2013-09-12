@@ -19,7 +19,7 @@ public class TimeBombFile implements MigratableProcess{
 		}
 		
 		countdown = Integer.parseInt(args[0]);
-		outFile = new TransactionalFileOutputStream(args[1], false);
+		outFile = new TransactionalFileOutputStream(args[1]);
 		suspended = false;
 	}
 

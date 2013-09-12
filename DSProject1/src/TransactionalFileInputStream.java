@@ -16,7 +16,7 @@ public class TransactionalFileInputStream extends InputStream implements
 	}
 	
 	@Override
-	public int read() throws IOException {
+	public int read() throws FileNotFoundException, IOException {
 
 		synchronized(ProcessManager.fileLock){
 		

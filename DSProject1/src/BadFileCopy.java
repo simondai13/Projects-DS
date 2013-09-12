@@ -18,7 +18,7 @@ public class BadFileCopy implements MigratableProcess{
 			throw new IllegalArgumentException("Invalid Arguments");
 		}
 		inFile = new TransactionalFileInputStream(args[0]);
-		outFile = new TransactionalFileOutputStream(args[1], false);
+		outFile = new TransactionalFileOutputStream(args[1]);
 		suspended = false;
 	}
 
@@ -33,11 +33,11 @@ public class BadFileCopy implements MigratableProcess{
 			while (!suspended && !eof) {
 				
 				int read = in.read();
-				if(read == -1){
-					
+				if(read == -1)
+				{
+					eof = true;
 					inFile.close();
 					outFile.close();
-					eof = true;
 				}
 				else
 					out.write(read);
@@ -46,6 +46,7 @@ public class BadFileCopy implements MigratableProcess{
 					Thread.sleep(50);
 				} catch (InterruptedException e) {}
 			}
+
 		} catch (IOException e) {
 			return;
 		}

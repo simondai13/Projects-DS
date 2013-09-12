@@ -11,8 +11,9 @@ public class Main {
 		Thread t1 = new Thread(pm);
 		t1.start();
 		
-		/*String adr = "localhost";//"71.206.238.246";
+		String adr = "localhost";//"71.206.238.246";
 		
+		/*
 		String[] s = {"100"};
 		System.out.println("Starting process TimeBomb");
 		MigratableProcess mp = pm.startProcess("TimeBomb", s);
@@ -32,12 +33,13 @@ public class Main {
 		pm.migrateProcess(adr, mp2);
 		
 		String[] params2 = {"BadFileCopyIn.txt", "BadFileCopyOut.txt"};
+		BadFileCopy bfc = new BadFileCopy(params2);
 		System.out.println("Starting process BadFileCopy");
-		MigratableProcess mp3 = pm.startProcess("BadFileCopy", params2);
+		pm.startProcess(bfc);
 		
 		Thread.sleep(300);
 		System.out.println("sending migration request for BadFileCopy");
-		pm.migrateProcess(adr, 1255, mp3);
+		pm.migrateProcess(adr, 1255, bfc);
 		
 		
 		
