@@ -1,12 +1,13 @@
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 
 public class Main {
 
-	public static void main(String args[]) throws UnknownHostException, InterruptedException{
-/*
-		ProcessManager pm = new ProcessManager(1255);
+	public static void main(String args[]) throws InterruptedException, IOException{
+
+		ProcessManager pm = new ProcessManagerMaster(1255);
 		
 		Thread t1 = new Thread(pm);
 		t1.start();
@@ -24,7 +25,7 @@ public class Main {
 		System.out.println("sending migration request for TimeBomb");
 		
 		pm.migrateProcess(adr,1255, mp);
-		
+		/*
 		
 		//"71.206.238.246";
 		

@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -22,8 +23,13 @@ public class ProcessManagerMaster extends ProcessManager {
 	@Override
 	public String runningOn(MigratableProcess p) {
 
-		if(isRunningLocally(p))
-			return server.getInetAddress()+"";
+		if(isRunningLocally(p)){
+			try {
+				return InetAddress.getLocalHost()+":"+server.getLocalPort();
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+			}
+		}
 		//ask every slave
 		for(Socket s : slaves){
 			
@@ -37,13 +43,6 @@ public class ProcessManagerMaster extends ProcessManager {
 	@Override
 	public void run() {
 
-		 try{
-			 server = new ServerSocket(port_num); 
-		 } catch (IOException e) {
-			 //We cannot run a process server on this machine if the port is problematic
-			 System.out.println("Could not listen on port " +Integer.toString(port_num));
-			 return;
-		}
 		 while(true) {
 			 Socket client;
 			 try{

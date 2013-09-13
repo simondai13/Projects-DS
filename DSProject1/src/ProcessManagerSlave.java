@@ -25,13 +25,6 @@ public class ProcessManagerSlave extends ProcessManager {
 
 	public void run()
 	{
-		 try{
-			 server = new ServerSocket(port_num); 
-		 } catch (IOException e) {
-			 //We cannot run a process server on this machine if the port is problematic
-			 System.out.println("Could not listen on port " +Integer.toString(port_num));
-			 return;
-		}
 		 while(true) {
 			 Socket client;
 			 try{

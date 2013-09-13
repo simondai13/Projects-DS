@@ -5,7 +5,6 @@ import java.io.*;
 
 public abstract class ProcessManager implements Runnable {
 
-	protected int port_num;
 	protected ServerSocket server;
 	protected Map<MigratableProcess, Thread> processes;
 	
@@ -19,8 +18,14 @@ public abstract class ProcessManager implements Runnable {
 	//Constructor for a slave node ProcessManager
 	//Stores a single instance of 
 	public ProcessManager(int port_num){
-		
-		this.port_num = port_num;
+
+		 try{
+			 server = new ServerSocket(port_num); 
+		 } catch (IOException e) {
+			 //We cannot run a process server on this machine if the port is problematic
+			 System.out.println("Could not listen on port " +Integer.toString(port_num));
+			 return;
+		}
 		processes = new HashMap<MigratableProcess, Thread>();
 	}
 	
