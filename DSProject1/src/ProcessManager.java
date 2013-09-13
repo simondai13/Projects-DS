@@ -74,7 +74,7 @@ public abstract class ProcessManager implements Runnable {
 		}
 	}
 
-	public abstract String runningOn(MigratableProcess p);
+	public abstract List<String> runningProcesses();
 	public abstract void run();
 	
 }

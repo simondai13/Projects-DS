@@ -11,6 +11,11 @@ public class Main {
 		
 		Thread t1 = new Thread(pm);
 		t1.start();
+
+		ProcessManager pm1 = new ProcessManagerMaster(1256);
+		
+		Thread t2 = new Thread(pm1);
+		t2.start();
 		
 		String adr = "localhost";
 
@@ -20,11 +25,12 @@ public class Main {
 		MigratableProcess mp = new TimeBomb(s);
 		pm.startProcess(mp);
 		
-		Thread.sleep(500);
-		System.out.println(pm.runningOn(mp));
 		System.out.println("sending migration request for TimeBomb");
 		
-		pm.migrateProcess(adr,1255, mp);
+		pm.migrateProcess(adr,1256, mp);
+
+		Thread.sleep(500);
+		System.out.println(pm1.runningProcesses());
 		/*
 		
 		//"71.206.238.246";

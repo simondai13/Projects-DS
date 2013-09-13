@@ -20,7 +20,6 @@ public class ProcessManagerMaster extends ProcessManager {
 		slaves = new ArrayList<Socket>();
 	}
 
-	@Override
 	public String runningOn(MigratableProcess p) {
 
 		if(isRunningLocally(p)){
@@ -50,6 +49,7 @@ public class ProcessManagerMaster extends ProcessManager {
 				 InputStream in = client.getInputStream();
 				 
 				 //HANDLE DIFFERENT INPUTS (use headers?)
+				 //IE, SLAVE QUERIES
 				 
 				 //Now we de-serialize the object
 				 InputStream buffer= new BufferedInputStream(in);
@@ -66,5 +66,23 @@ public class ProcessManagerMaster extends ProcessManager {
 			 }
 		 }
 		 
+	}
+
+	@Override
+	public List<String> runningProcesses() {
+
+		List<String> toReturn = new ArrayList<String>();
+		try {
+			for(MigratableProcess m : processes.keySet()){
+				
+				Thread t = processes.get(m);
+				if(t.isAlive())
+					toReturn.add(m.getClass().getName() + " "+InetAddress.getLocalHost()+":"+server.getLocalPort());
+			}
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+		
+		return toReturn;
 	}
 }

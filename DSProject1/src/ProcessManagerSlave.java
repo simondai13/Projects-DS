@@ -16,13 +16,6 @@ public class ProcessManagerSlave extends ProcessManager {
 	}
 	
 	
-	public String runningOn(MigratableProcess p){
-		
-		//Ask Master
-		
-		return null;
-	}
-
 	public void run()
 	{
 		 while(true) {
@@ -30,6 +23,7 @@ public class ProcessManagerSlave extends ProcessManager {
 			 try{
 				 client = server.accept();
 				 InputStream in = client.getInputStream();
+				 //HANDLE MASTER QUERIES FIRST
 				 //Now we de-serialize the object
 				 InputStream buffer= new BufferedInputStream(in);
 				 ObjectInput obj = new ObjectInputStream(buffer);
@@ -45,6 +39,17 @@ public class ProcessManagerSlave extends ProcessManager {
 			 }
 		 }
 		 
+	}
+
+
+	@Override
+	public List<String> runningProcesses() {
+
+		List<String> toReturn = new ArrayList<String>();
+		
+		//call master version
+		
+		return null;
 	}
 	
 }
