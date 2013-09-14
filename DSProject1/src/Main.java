@@ -7,6 +7,30 @@ public class Main {
 
 	public static void main(String args[]) throws InterruptedException, IOException{
 
+		ProcessManagerServer server = new ProcessManagerServer(1257);
+		Thread t1 = new Thread(server);
+		t1.start();
+		
+		ProcessManagerClient client1 = new ProcessManagerClient(1255,"localhost",1257);
+		Thread t2 = new Thread(client1);
+		t2.start();
+		
+		ProcessManagerClient client2 = new ProcessManagerClient(1256,"localhost",1257);
+		Thread t3 = new Thread(client2);
+		t3.start();
+		
+		String[] s = {"100"};
+		MigratableProcess mp = new TimeBomb(s);
+		client1.startProcess(mp);
+		
+		System.out.println("sending migration request for TimeBomb");
+		client1.migrateProcess("localhost",1256, mp);
+		
+		client1.checkStatus(mp);
+		Thread.sleep(1000*15);
+		client1.checkStatus(mp);
+		
+		/*
 		ProcessManager pm = new ProcessManagerMaster(1255);
 		
 		Thread t1 = new Thread(pm);
