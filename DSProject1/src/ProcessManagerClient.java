@@ -17,7 +17,7 @@ import java.util.Random;
 public class ProcessManagerClient implements Runnable {
 	
 	//The host and port on which the ProcessManagerServer is running
-	private String pmServer;
+	private InetAddress pmServer;
 	private int pmPort;
 	
 	//Note, it is assumed that all client "servers" are listening on the same local port
@@ -29,11 +29,13 @@ public class ProcessManagerClient implements Runnable {
 	
 	//Constructor for a slave node ProcessManager
 	//Stores a single instance of 
-	public ProcessManagerClient(int port_num, String pmServer, int pmPort) throws IOException{
+	public ProcessManagerClient(int port_num, InetAddress pmServer, int pmPort) throws IOException{
 
 		this.pmServer = pmServer;
 		this.pmPort = pmPort;
-		
+		if(pmServer.getHostName().equals("localhost"))
+			this.pmServer = InetAddress.getLocalHost();
+		System.out.println(this.pmServer.getHostAddress());
 		server = new ServerSocket(port_num); 
 		processes = new HashMap<Long,Thread>();
 		processIDs = new HashMap<MigratableProcess,Long>();
@@ -57,19 +59,12 @@ public class ProcessManagerClient implements Runnable {
 		//Tell the process server about this process
 		ProcessRequest pr = new ProcessRequest();
 		pr.guid=id;
-		pr.destination = new NodeAddr(server.getInetAddress().getHostAddress(),server.getLocalPort());
+		pr.destination = new NodeAddr(server.getInetAddress(),server.getLocalPort());
 		pr.req = RequestType.LAUNCH;
 		sendProcessRequest(pr,pmServer,pmPort);
 		return id;
 	}
 	private void resumeProcess(MigratableProcess p, long id) {
-		//Make sure that this instance of a MigratableProcess is not
-		//already running,  a new instance of a MigratableProcess is required for each
-		//thread
-		if(processIDs.get(p) != null) {
-			System.out.println("Attempting to start the same migratable process multiple times, create a new instance");
-			return;
-		}
 		
 		Thread processThread = new Thread(p);
 		processThread.start();
@@ -93,19 +88,22 @@ public class ProcessManagerClient implements Runnable {
 		ProcessRequest resp = sendProcessRequest(pr,pmServer,pmPort);
 		if(resp.resp == ResponseType.RUNNING)
 			return resp.destination.address +":" + resp.destination.port;
-		
+		else if(resp.resp == ResponseType.TERMINATED)
+			return "Terminated";
+		else if (resp.resp == ResponseType.LOST)
+			return "Lost";
 		return null;
 	}
 	
 	//migrates a process given a reference to the instance
-	public void migrateProcess(String newAddress, int port, MigratableProcess p){
+	public void migrateProcess(InetAddress newAddress, int port, MigratableProcess p){
 		//Check if the process has already terminated
 		long id =processIDs.get(p);
 		migrateProcess(newAddress, port ,id);
 	}
 	
 	//migrates a process given an id
-	public void migrateProcess(String newAddress, int port, long id) 
+	public void migrateProcess(InetAddress newAddress, int port, long id) 
 	{
 		ProcessRequest pr = new ProcessRequest();
 		pr.guid=id;
@@ -134,7 +132,7 @@ public class ProcessManagerClient implements Runnable {
 		}
 	}
 	
-	private boolean migrateLocalProcess(String newAddress, int port, MigratableProcess p)
+	private boolean migrateLocalProcess(InetAddress newAddress, int port, MigratableProcess p)
 	{
 		try{
 			p.suspend();
@@ -198,11 +196,11 @@ public class ProcessManagerClient implements Runnable {
 				r.resp=ResponseType.TERMINATED;
 			}else{
 				r.resp=ResponseType.RUNNING;
-				String thisHost=null;
+				InetAddress thisHost=null;
 				try{
-					thisHost = InetAddress.getLocalHost().getHostAddress();
+					thisHost = InetAddress.getLocalHost();
 				} catch (UnknownHostException e) {
-					thisHost="Unknow Host";
+					thisHost=null;
 				}
 				r.destination = new NodeAddr(thisHost, server.getLocalPort());
 			} 
@@ -251,7 +249,7 @@ public class ProcessManagerClient implements Runnable {
 	}
 	
 	//Sends a process request to the server and returns the response
-	private ProcessRequest sendProcessRequest(ProcessRequest pr, String prServer, int port)
+	private ProcessRequest sendProcessRequest(ProcessRequest pr, InetAddress prServer, int port)
 	{
 		ProcessRequest resp = null;
 		try

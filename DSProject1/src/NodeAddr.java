@@ -1,10 +1,11 @@
 import java.io.Serializable;
+import java.net.InetAddress;
 
 
 public class NodeAddr implements Serializable  {
-	public String address;
+	public InetAddress address;
 	public int port;
-	NodeAddr(String address, int port){
+	NodeAddr(InetAddress address, int port){
 		this.address=address;
 		this.port=port;
 	}

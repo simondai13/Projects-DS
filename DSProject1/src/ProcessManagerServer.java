@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
@@ -44,8 +45,11 @@ public class ProcessManagerServer implements Runnable {
 				 
 				 InputStream in = client.getInputStream();
 				 ObjectInput objIn = new ObjectInputStream(in);
-				 
-				 ProcessRequest pr = (ProcessRequest) objIn.readObject();
+				 Object obj = objIn.readObject();
+				 if(!ProcessRequest.class.isAssignableFrom(obj.getClass())){
+					 return;
+				 }
+				 ProcessRequest pr = (ProcessRequest) obj;
 				 
 				 synchronized(terminatedProcesses){
 					 if(pr.req == RequestType.STATUS)
@@ -70,7 +74,16 @@ public class ProcessManagerServer implements Runnable {
 						 if(terminatedProcesses.contains(pr.guid))
 						 {
 							 pr.resp = ResponseType.TERMINATED;
-						 } else {
+						 } 
+						 else if(pr.destination.address.getHostAddress().equals(InetAddress.getLocalHost().getHostAddress()) 
+								 && pr.destination.port == server.getLocalPort()){
+							 
+							 pr.resp = ResponseType.MIGRATE_FAILED;
+							 System.out.println("adsfjalsdkfjh");
+						 }
+						 else {
+							 System.out.println(pr.destination.address.getHostAddress());
+							 System.out.println(InetAddress.getLocalHost().getHostAddress());
 							 NodeAddr addr = processLocations.get(pr.guid);
 							 pr = forwardRequest(pr, addr.address , addr.port);
 							 if(pr.resp == ResponseType.MIGRATE_OK){
@@ -97,7 +110,7 @@ public class ProcessManagerServer implements Runnable {
 		//the request result  Note, unfortunately this whole socket communication has to
 		//be done within mutex control to ensure that a process is not moved while another
 		//is trying to access it.
-		private ProcessRequest forwardRequest(ProcessRequest pr, String addr, int port)
+		private ProcessRequest forwardRequest(ProcessRequest pr, InetAddress addr, int port)
 		{
 			ProcessRequest resp = pr;
 			try
