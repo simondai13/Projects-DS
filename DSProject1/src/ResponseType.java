@@ -1,0 +1,4 @@
+
+public enum ResponseType {
+	MIGRATE_OK, MIGRATE_FAILED, RUNNING, TERMINATED, LOST
+}

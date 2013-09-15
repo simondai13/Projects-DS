@@ -1,6 +1,4 @@
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 
 public class Main {
@@ -25,10 +23,15 @@ public class Main {
 		
 		System.out.println("sending migration request for TimeBomb");
 		client1.migrateProcess("localhost",1256, mp);
+		String host = client1.checkStatus(mp);
+		if(host!=null)
+			System.out.println("Running on " + host);
+		client1.migrateProcess("localhost", 1255, mp);
+		host = client1.checkStatus(mp);
+		if(host!=null)
+			System.out.println("Running on " + host);
 		
-		client1.checkStatus(mp);
-		Thread.sleep(1000*15);
-		client1.checkStatus(mp);
+		
 		
 		/*
 		ProcessManager pm = new ProcessManagerMaster(1255);
