@@ -39,13 +39,13 @@ public class ProcessManagerClient implements Runnable {
 		processIDs = new HashMap<MigratableProcess,Long>();
 	}
 	
-	public void startProcess(MigratableProcess p) {
+	public long startProcess(MigratableProcess p) {
 		//Make sure that this instance of a MigratableProcess is not
 		//already running,  a new instance of a MigratableProcess is required for each
 		//thread
 		if(processIDs.get(p) != null) {
 			System.out.println("Attempting to start the same migratable process multiple times, create a new instance");
-			return;
+			return -1;
 		}
 		
 		Thread processThread = new Thread(p);
@@ -60,6 +60,7 @@ public class ProcessManagerClient implements Runnable {
 		pr.destination = new NodeAddr(server.getInetAddress().getHostAddress(),server.getLocalPort());
 		pr.req = RequestType.LAUNCH;
 		sendProcessRequest(pr,pmServer,pmPort);
+		return id;
 	}
 	private void resumeProcess(MigratableProcess p, long id) {
 		//Make sure that this instance of a MigratableProcess is not
@@ -80,6 +81,12 @@ public class ProcessManagerClient implements Runnable {
 	//string of the host or null if the process is lost or terminated
 	public String checkStatus(MigratableProcess p) {
 		long id = processIDs.get(p);
+		return checkStatus(id);
+	}
+	
+	//Checks status of a running process
+	public String checkStatus(long id){
+
 		ProcessRequest pr = new ProcessRequest();
 		pr.guid=id;
 		pr.req = RequestType.STATUS;
@@ -89,12 +96,15 @@ public class ProcessManagerClient implements Runnable {
 		
 		return null;
 	}
+	
+	//migrates a process given a reference to the instance
 	public void migrateProcess(String newAddress, int port, MigratableProcess p){
 		//Check if the process has already terminated
 		long id =processIDs.get(p);
 		migrateProcess(newAddress, port ,id);
 	}
 	
+	//migrates a process given an id
 	public void migrateProcess(String newAddress, int port, long id) 
 	{
 		ProcessRequest pr = new ProcessRequest();
@@ -208,14 +218,14 @@ public class ProcessManagerClient implements Runnable {
 		 while(true) {
 			 Socket client;
 			 try{
-				 client = server.accept();
+				client = server.accept();
 				
-				 OutputStream out = client.getOutputStream();
-				 ObjectOutput objOut = new ObjectOutputStream(out);
-				 //objOut.flush(); //flush immediately to prevent blocking
+				OutputStream out = client.getOutputStream();
+				ObjectOutput objOut = new ObjectOutputStream(out);
+				//objOut.flush(); //flush immediately to prevent blocking
 				 
-				 InputStream in = client.getInputStream();
-				 ObjectInput objIn = new ObjectInputStream(in);
+				InputStream in = client.getInputStream();
+				ObjectInput objIn = new ObjectInputStream(in);
 				
 				Object inputObject = objIn.readObject();
 				
@@ -231,7 +241,7 @@ public class ProcessManagerClient implements Runnable {
 				}
 				
 			 } catch (ClassNotFoundException e) {
-				 System.out.println("Corrupted data recieved");
+				 System.out.println("Corrupted data recieved.");
 			 } catch (IOException e) {
 				 e.printStackTrace();
 				 System.out.println("Connection to client failed.");

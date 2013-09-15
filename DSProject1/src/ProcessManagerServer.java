@@ -17,6 +17,7 @@ public class ProcessManagerServer implements Runnable {
 	//for a process manager that handles many processes over its life, it might be best to bound this
 	private Vector<Long> terminatedProcesses;
 	
+	//maps unique process ID's to addresses where that process should be run
 	private TreeMap<Long, NodeAddr> processLocations;
 	
 	public ProcessManagerServer(int portNum) throws IOException {
@@ -141,7 +142,7 @@ public class ProcessManagerServer implements Runnable {
 				
 			} catch (IOException e) {
 				// Just chalk it up to a failed connection and keep
-				//running
+				// running
 			}
 			 
 				 

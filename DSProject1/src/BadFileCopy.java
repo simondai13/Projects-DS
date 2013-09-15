@@ -59,6 +59,5 @@ public class BadFileCopy implements MigratableProcess{
 	public void suspend() {
 		suspended=true;
 		while(suspended);
-		System.out.println("suspending");
 	}
 }
