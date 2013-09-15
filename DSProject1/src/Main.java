@@ -31,7 +31,7 @@ public class Main {
 		client1.migrateProcess(adr,1256, mp);
 		System.out.println("Running on " + client1.checkStatus(mp));
 		Thread.sleep(500);
-		//client1.migrateProcess(adr, 1255, mp);
+		client1.migrateProcess(adr, 1255, mp);
 
 		System.out.println("Running on " + client1.checkStatus(mp));
 

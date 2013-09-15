@@ -3,12 +3,13 @@ Interfaces:
 Our only interface is the MigratableProcess interface, which extends the Runnable and Serializable interfaces. This groups all MigratableProcesses into one type which we can use to run/migrate in our ProcessManager class, where we do not know what classes we will be running. This abstraction allows our ProcessManager to run and migrate any type of class that implements MigratableProcess (can run because a MigratableProcess must implement Runnable, and can be migrated because it should implement suspend() and can be Serialized).
 
 Driver classes:
-The main driver class is the ProcessManager class, which does the bulk of the work regarding MigratableProcesses. We chose to make the ProcessManager implement Runnable, so to start a ProcessManager, one could simply create a new instance, and call run(). Starting a ProcessManager does not cause it to run any tasks, but does spin up a server socket, which listens for incoming requests. These requests are (usually) to migrate a task TO this ProcessManager. If a migration is made to this ProcessManager instance, we will accept the client connection, read in the object, deserialize it, and then run it by calling its .run() method. Also, a ProcessManager can be used to start new MigratableProcesses. We used Reflections to create an instance of a class given its name and arguments to its constructor (which should be of the form (String args[])), and then run it (if it implements MigratableProcess) in a new Thread. We create a new Thread so we can manage all of the processes running on a given ProcessManager (so we could suspend/resume a thread at any point).
+The first important class is the ProcessManagerServer class, of which there should only be once instance for each set of ProcessManagerClients. The ProcessManagerServer's only job is to coordinate a set of clients; it cannot run processes by itself. If a ProcessManagerClient wants to perform any task, it has to send a ProcessRequest to the server, and the server will acknowledge the request by responding with another ProcessRequest, then the client can perform the task.
+
+The ProcessManagerClient class represents a single node in the network, that has the ability to run processes. A ProcessManagerClient has methods for starting MigratableProcesses, migrating MigratableProcesses, and polling about the status of certain MigratableProcesses, given an instance of the proccess, or an ID. We assign each process that we start from a client a "unique" id (The id's are a randomly generated long, so the chances of having 2 ids that are the same are very low, 
 
 File IO classes: 
 
-We build a TransactionalFileInputStream and TransactionalFileOutputStream class to handle file IO in a way safe for process migration. 
-***Pending Ken's FD work
+We built a TransactionalFileInputStream and TransactionalFileOutputStream class to handle file IO in a way safe for process migration. We leave a file descriptor open for multiple reads/writes to the same file, until we migrate the process, in which case we close the file descriptor, and re-open it when we use the file again, after the process has been successfully migrated.
 
 Making MigratableProcesses:
 
