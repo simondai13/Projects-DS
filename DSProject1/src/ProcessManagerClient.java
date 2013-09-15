@@ -97,7 +97,6 @@ public class ProcessManagerClient implements Runnable {
 	
 	//migrates a process given a reference to the instance
 	public void migrateProcess(InetAddress newAddress, int port, MigratableProcess p){
-		//Check if the process has already terminated
 		long id =processIDs.get(p);
 		migrateProcess(newAddress, port ,id);
 	}
@@ -105,6 +104,16 @@ public class ProcessManagerClient implements Runnable {
 	//migrates a process given an id
 	public void migrateProcess(InetAddress newAddress, int port, long id) 
 	{
+		//Make sure no confusing "localhost" destinations are sent
+		if(newAddress.getHostName().equals("localhost")){
+			try{
+				newAddress = InetAddress.getLocalHost();
+			} catch (UnknownHostException e) {
+				return;
+			}
+		}
+			
+		
 		ProcessRequest pr = new ProcessRequest();
 		pr.guid=id;
 		pr.destination = new NodeAddr(newAddress,port);
