@@ -5,7 +5,7 @@ Our only interface is the MigratableProcess interface, which extends the Runnabl
 Driver classes:
 The first important class is the ProcessManagerServer class, of which there should only be once instance for each set of ProcessManagerClients. The ProcessManagerServer's only job is to coordinate a set of clients; it cannot run processes by itself. If a ProcessManagerClient wants to perform any task, it has to send a ProcessRequest to the server, and the server will acknowledge the request by responding with another ProcessRequest, then the client can perform the task.
 
-The ProcessManagerClient class represents a single node in the network, that has the ability to run processes. A ProcessManagerClient has methods for starting MigratableProcesses, migrating MigratableProcesses, and polling about the status of certain MigratableProcesses, given an instance of the proccess, or an ID. We assign each process that we start from a client a "unique" id (The id's are a randomly generated long, so the chances of having 2 ids that are the same are very low, 
+The ProcessManagerClient class represents a single node in the network, that has the ability to run processes. A ProcessManagerClient has methods for starting MigratableProcesses, migrating MigratableProcesses, and polling about the status of certain MigratableProcesses, given an instance of the proccess, or an ID. We assign each process that we start from a client a "unique" id (The id's are a randomly generated long, so the chances of having 2 ids that are the same are very low, probably lower than the chances of having some network failure). Then, we can use that id as an identifier for each process. 
 
 File IO classes: 
 

@@ -145,7 +145,7 @@ public class ProcessManagerClient implements Runnable {
 	{
 		try{
 			p.suspend();
-			synchronized(ProcessManager.fileLock){
+			synchronized(ProcessManagerClient.fileLock){
 				Socket client = new Socket(newAddress,port);
 				OutputStream out = client.getOutputStream();
 				ObjectOutput output = new ObjectOutputStream(out);

@@ -18,7 +18,7 @@ public class TransactionalFileInputStream extends InputStream implements
 	@Override
 	public int read() throws FileNotFoundException, IOException {
 
-		synchronized(ProcessManager.fileLock){
+		synchronized(ProcessManagerClient.fileLock){
 		
 			if(openFile == null)
 				openStream();

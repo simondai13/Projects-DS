@@ -25,7 +25,7 @@ public class TransactionalFileOutputStream extends OutputStream implements
 	@Override
 	public void write(int c) throws FileNotFoundException, IOException {
 
-		synchronized(ProcessManager.fileLock){
+		synchronized(ProcessManagerClient.fileLock){
 		
 			if(openFile == null)
 				openStream();
