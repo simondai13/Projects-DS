@@ -152,7 +152,7 @@ public class ProcessManagerClient implements Runnable {
 				long tag =processIDs.get(p);
 				TaggedMP tagP = new TaggedMP(p,tag);
 				output.writeObject(tagP);
-				client.close();
+				//client.close();
 				processes.remove(tag);
 			}
 		}catch (IOException e) {
@@ -229,7 +229,6 @@ public class ProcessManagerClient implements Runnable {
 				
 				OutputStream out = client.getOutputStream();
 				ObjectOutput objOut = new ObjectOutputStream(out);
-				//objOut.flush(); //flush immediately to prevent blocking
 				 
 				InputStream in = client.getInputStream();
 				ObjectInput objIn = new ObjectInputStream(in);
@@ -245,12 +244,15 @@ public class ProcessManagerClient implements Runnable {
 					 TaggedMP process = (TaggedMP) inputObject;
 					 //Run the process on this machine
 					 resumeProcess(process.mp,process.id);
+					 
+					 //When receiving Migratible process, we opt to close the stream from the
+					 //receiver to ensure that the entire object is read before the stream is closed
+					 client.close();
 				}
 				
 			 } catch (ClassNotFoundException e) {
 				 System.out.println("Corrupted data recieved.");
 			 } catch (IOException e) {
-				 e.printStackTrace();
 				 System.out.println("Connection to client failed.");
 			 }
 		 }
