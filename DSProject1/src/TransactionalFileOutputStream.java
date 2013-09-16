@@ -6,7 +6,8 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
 
-
+//Simple abstraction of a file input stream that reopen a file if the state of this input
+//stream is serialized.  This allows file IO to work across multiple machines (Assuming a shared file system).
 public class TransactionalFileOutputStream extends OutputStream implements
 		Serializable {
 
@@ -52,9 +53,11 @@ public class TransactionalFileOutputStream extends OutputStream implements
 		
 	}
 	
+	//Called when the stream is serialized, close the open file
 	private void writeObject(ObjectOutputStream out) throws IOException
 	{
-		openFile.close();
+		if(openFile!=null)
+			openFile.close();
 		openFile = null;
 		out.defaultWriteObject();
 	}

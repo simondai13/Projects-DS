@@ -11,7 +11,14 @@ import java.net.Socket;
 import java.util.Vector;
 import java.util.TreeMap;
 
-
+/*
+ * The ProcessManagerServer is responsible for coordinating the ProcessManagerClients.  There should be 1 and only
+ * 1 Server running in the system.  It contains the location of all running and terminated processes such that 
+ * a Client can migrate a process that is not neccesarily located on its machine.  Note that no polling is done 
+ * on the processes.  If the user wants to know when a process has finished, they are responsible for making
+ * checkStatus calls.  If a process terminates safely, but the node dies before another client query's it, then 
+ * that process will be in the "LOST" state.
+ */
 public class ProcessManagerServer implements Runnable {
 	private ServerSocket server;
 	//As it is currently set up, terminatedProcesses is unbounded and thus
@@ -37,6 +44,8 @@ public class ProcessManagerServer implements Runnable {
 			this.client=client;
 		}
 		
+		
+		//Handle the life cycle of a process request, and then let this thread die
 		@Override
 		public void run() {
 			try{
@@ -61,10 +70,10 @@ public class ProcessManagerServer implements Runnable {
 						 else
 						 {
 							 //Pass this response to the host that is running it
-						 NodeAddr addr = processLocations.get(pr.guid);
-						 pr = forwardRequest(pr, addr.address , addr.port);
+							 NodeAddr addr = processLocations.get(pr.guid);
+							 pr = forwardRequest(pr, addr.address , addr.port);
 						 
-						 //Cache the terminated process if necessary 
+							 //Cache the terminated process if necessary 
 							 if(pr.resp == ResponseType.TERMINATED) {
 								 processLocations.remove(pr.guid);
 								 terminatedProcesses.add(pr.guid);
@@ -74,16 +83,15 @@ public class ProcessManagerServer implements Runnable {
 						 if(terminatedProcesses.contains(pr.guid))
 						 {
 							 pr.resp = ResponseType.TERMINATED;
-						 } 
+						 }
+						 //Make sure we are not making a process request to the server, this will cause an 
+						 //infinite loop
 						 else if(pr.destination.address.getHostAddress().equals(InetAddress.getLocalHost().getHostAddress()) 
 								 && pr.destination.port == server.getLocalPort()){
 							 
 							 pr.resp = ResponseType.MIGRATE_FAILED;
-							 System.out.println("adsfjalsdkfjh");
 						 }
 						 else {
-							 System.out.println(pr.destination.address.getHostAddress());
-							 System.out.println(InetAddress.getLocalHost().getHostAddress());
 							 NodeAddr addr = processLocations.get(pr.guid);
 							 pr = forwardRequest(pr, addr.address , addr.port);
 							 if(pr.resp == ResponseType.MIGRATE_OK){
@@ -103,9 +111,9 @@ public class ProcessManagerServer implements Runnable {
 				 System.out.println("Invalid Process Request");
 			 }  catch (IOException e) {
 				 System.out.println("Error receiving client message.");
-					 e.printStackTrace();
-				 }
-			}
+			 }
+		}
+		
 		//Forwards the request pr to the address addr with port number port, and returns 
 		//the request result  Note, unfortunately this whole socket communication has to
 		//be done within mutex control to ensure that a process is not moved while another
@@ -141,11 +149,10 @@ public class ProcessManagerServer implements Runnable {
 	}
 	
 	@Override
+	//Simply accept connections and spawn ConnectionHandles as needed for this client
 	public void run() {
 		while(true) {
-			
 			try {
-				
 				Socket client = server.accept();
 				//Generate a connection handle and run it in a 
 				//separate thread
