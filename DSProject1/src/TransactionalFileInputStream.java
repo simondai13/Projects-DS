@@ -1,6 +1,7 @@
 import java.io.*;
 
-
+//Simple abstraction of a file input stream that reopen a file if the state of this input
+//stream is serialized.  This allows file IO to work across multiple machines (Assuming a shared file system).
 public class TransactionalFileInputStream extends InputStream implements
 		Serializable {
 
@@ -47,9 +48,11 @@ public class TransactionalFileInputStream extends InputStream implements
 		
 	}
 	
+	//This gets called when the object is serialized, close the open stream
 	private void writeObject(ObjectOutputStream out) throws IOException
 	{
-		openFile.close();
+		if(openFile!=null)
+			openFile.close();
 		openFile = null;
 		out.defaultWriteObject();
 	}

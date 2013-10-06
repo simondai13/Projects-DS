@@ -13,34 +13,44 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Random;
 
-
+/*
+ * An instance of this class is equivalent to a node in the distributed system.  It runs MigratableProcesses
+ * in addition to allowing the user to migrate these processes to another ProcessManagerClient on the network.  
+ * Furthermore, the user can query running processes by id or object reference across the network.
+ */
 public class ProcessManagerClient implements Runnable {
 	
 	//The host and port on which the ProcessManagerServer is running
 	private InetAddress pmServer;
 	private int pmPort;
 	
-	//Note, it is assumed that all client "servers" are listening on the same local port
+	//The local "server" for this client that accepts incoming communication
 	private ServerSocket server;
+	
+	//Keep track of processes running locally to this machine to service query's regarding these processes
 	private HashMap<Long,Thread> processes;
 	private HashMap<MigratableProcess,Long> processIDs;
 	
+	//A single lock to synchronize file operations
 	public static Object fileLock = new Object();
 	
-	//Constructor for a slave node ProcessManager
-	//Stores a single instance of 
+	//Begin a node in the network on this machine listening on port_num, connected to the ProcessManagerServer 
+	//located at ip address pmServer listening on port pmPort
 	public ProcessManagerClient(int port_num, InetAddress pmServer, int pmPort) throws IOException{
 
 		this.pmServer = pmServer;
 		this.pmPort = pmPort;
+		
+		//De-mystify any local host references
 		if(pmServer.getHostName().equals("localhost"))
 			this.pmServer = InetAddress.getLocalHost();
-		System.out.println(this.pmServer.getHostAddress());
+		
 		server = new ServerSocket(port_num); 
 		processes = new HashMap<Long,Thread>();
 		processIDs = new HashMap<MigratableProcess,Long>();
 	}
 	
+	//Start a migratableProcess on this machine that is synchronized with the process server
 	public long startProcess(MigratableProcess p) {
 		//Make sure that this instance of a MigratableProcess is not
 		//already running,  a new instance of a MigratableProcess is required for each
@@ -64,6 +74,8 @@ public class ProcessManagerClient implements Runnable {
 		sendProcessRequest(pr,pmServer,pmPort);
 		return id;
 	}
+	
+	//Resume MigratableProcess p on this machine
 	private void resumeProcess(MigratableProcess p, long id) {
 		
 		Thread processThread = new Thread(p);
@@ -79,7 +91,8 @@ public class ProcessManagerClient implements Runnable {
 		return checkStatus(id);
 	}
 	
-	//Checks status of a running process
+	//Checks status of a running process and return a string indicating its status, either running, terminated,
+	//or lost
 	public String checkStatus(long id){
 
 		ProcessRequest pr = new ProcessRequest();
@@ -87,7 +100,7 @@ public class ProcessManagerClient implements Runnable {
 		pr.req = RequestType.STATUS;
 		ProcessRequest resp = sendProcessRequest(pr,pmServer,pmPort);
 		if(resp.resp == ResponseType.RUNNING)
-			return resp.destination.address +":" + resp.destination.port;
+			return "Running on: " + resp.destination.address +":" + resp.destination.port;
 		else if(resp.resp == ResponseType.TERMINATED)
 			return "Terminated";
 		else if (resp.resp == ResponseType.LOST)
@@ -95,13 +108,15 @@ public class ProcessManagerClient implements Runnable {
 		return null;
 	}
 	
-	//migrates a process given a reference to the instance
+	//migrates a process given a reference to the instance.  Note that p could be running on 
+	//another machine
 	public void migrateProcess(InetAddress newAddress, int port, MigratableProcess p){
 		long id =processIDs.get(p);
 		migrateProcess(newAddress, port ,id);
 	}
 	
-	//migrates a process given an id
+	//Migrates a process with GUID id onto the machine with ip adress newAdress using port port.  Note that
+	//need only reference a running process, not necessarily one that is on this machine
 	public void migrateProcess(InetAddress newAddress, int port, long id) 
 	{
 		//Make sure no confusing "localhost" destinations are sent
@@ -141,6 +156,8 @@ public class ProcessManagerClient implements Runnable {
 		}
 	}
 	
+	//Attempts to migrate a process p that is running on this machine to newAddress using port port.  If the 
+	//migration fails, the process will be resumed on this machine
 	private boolean migrateLocalProcess(InetAddress newAddress, int port, MigratableProcess p)
 	{
 		try{
@@ -152,7 +169,6 @@ public class ProcessManagerClient implements Runnable {
 				long tag =processIDs.get(p);
 				TaggedMP tagP = new TaggedMP(p,tag);
 				output.writeObject(tagP);
-				//client.close();
 				processes.remove(tag);
 			}
 		}catch (IOException e) {
@@ -165,6 +181,9 @@ public class ProcessManagerClient implements Runnable {
 		return true;
 	}
 	
+	
+	//Parse a ProcesRequest from the ProcessManagerServer, and place the reply message in a corresponding Process
+	//Request to be sent back to the server.  
 	private ProcessRequest parseRequest(ProcessRequest r)
 	{
 		if(r.req == RequestType.MIGRATE)
@@ -218,7 +237,8 @@ public class ProcessManagerClient implements Runnable {
 		return r;
 	}
 	
-	
+	//Listen for connections made from the process server or other nodes.  The process server will send this node
+	//process requests, and other nodes will simply ship MigratableProcesses to be run on this machine
 	@Override
 	public void run() {
 
@@ -286,19 +306,19 @@ public class ProcessManagerClient implements Runnable {
 		return resp;
 	}
 	
+	
+	//Create a new random 128 bit id for this process.  The probability of overlap is miniscule 
 	private long newGuid()
 	{
 		Random rand = new Random();
 		
-		//0 is a reserved id ~= all processes
-		long guid = 0;
-		while(guid==0){
-			guid=rand.nextLong();
-		}
+		long guid=rand.nextLong();
 		
 		return guid;
 	}
 	
+	//The mapping of processes to id's is bijective, this is just the inverse operation of a get operation on the 
+	//map
 	private MigratableProcess getMP(long id)
 	{
 		for (Entry<MigratableProcess, Long> e : processIDs.entrySet())
