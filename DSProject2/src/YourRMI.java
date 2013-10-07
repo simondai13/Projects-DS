@@ -79,6 +79,8 @@ public class YourRMI
 		//     you should marshal it here) and send it out to the 
 		//     the source of the invoker.
 		// (7) closes the socket.
+		
+		Socket clientReq = serverSoc.accept();
 	    }
     }
 }

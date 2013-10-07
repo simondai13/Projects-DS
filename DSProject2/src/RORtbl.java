@@ -8,6 +8,7 @@ public class RORtbl
 {
     // I omit all instance variables. you can use hash table, for example.
     // The table would have a key by ROR.
+	
     
     // make a new table. 
     public RORtbl()
