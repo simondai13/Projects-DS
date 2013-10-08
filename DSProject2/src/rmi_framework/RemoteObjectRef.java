@@ -1,3 +1,4 @@
+package rmi_framework;
 
 import java.net.InetSocketAddress;
 
