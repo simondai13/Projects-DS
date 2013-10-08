@@ -14,10 +14,12 @@ public class RemoteObjectRegistry implements Runnable {
 	private ServerSocket server;
 	
 	//maps unique remote object names to locations 
-	private TreeMap<String,InetSocketAddress> remoteObjects;
+	private TreeMap<Long,InetSocketAddress> remoteObjects;
+	private long registryCounter;
 	
 	public RemoteObjectRegistry(int portNum) throws IOException {
-		remoteObjects = new TreeMap<String, InetSocketAddress>();
+		registryCounter = 0;
+		remoteObjects = new TreeMap<Long, InetSocketAddress>();
 		server=new ServerSocket(portNum);
 	}
 	
@@ -52,36 +54,32 @@ public class RemoteObjectRegistry implements Runnable {
 				 synchronized (remoteObjects)
 				 {
 					 switch (req.type) {
-					 	case BIND :
-					 		if(remoteObjects.containsKey(req.name))
-					 		{
-					 			resp.type = RegistryResponse.ResponseType.NAME_ALREADY_EXISTS;
-					 		}
-					 		else
-					 		{
-					 			remoteObjects.put(req.name, req.address);
-					 			resp.type = RegistryResponse.ResponseType.OK;
-					 		}
+					 	case REGISTER :
+					 		resp.id=registryCounter;
+					 		registryCounter++;
+					 		
+					 		remoteObjects.put(resp.id, req.address);
+					 		resp.type = RegistryResponse.ResponseType.OK;
 					 		break;
 					 	case LOOKUP :
-					 		if(!remoteObjects.containsKey(req.name))
+					 		if(!remoteObjects.containsKey(req.id))
 					 		{
-					 			resp.type = RegistryResponse.ResponseType.NAME_NOT_FOUND;
+					 			resp.type = RegistryResponse.ResponseType.NOT_FOUND;
 					 		}
 					 		else
 					 		{
 					 			resp.type = RegistryResponse.ResponseType.OK;
-					 			resp.address = remoteObjects.get(req.name);
+					 			resp.address = remoteObjects.get(req.id);
 					 		}
 					 		break;
-					 	case UNBIND :
-					 		if(!remoteObjects.containsKey(req))
+					 	case UNREGISTER :
+					 		if(!remoteObjects.containsKey(req.id))
 					 		{
-					 			resp.type = RegistryResponse.ResponseType.NAME_NOT_FOUND;
+					 			resp.type = RegistryResponse.ResponseType.NOT_FOUND;
 					 		}
 					 		else
 					 		{
-					 			remoteObjects.remove(req.name);
+					 			remoteObjects.remove(req.id);
 					 			resp.type = RegistryResponse.ResponseType.OK;
 					 		}
 					 		break;

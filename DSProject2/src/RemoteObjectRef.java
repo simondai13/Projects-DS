@@ -1,16 +1,14 @@
+import java.net.InetSocketAddress;
+
 public class RemoteObjectRef
 {
-    String IP_adr;
-    int Port;
-    int Obj_Key;
-    String Remote_Interface_Name;
+	InetSocketAddress address;
+    long id;
 
-    public RemoteObjectRef(String ip, int port, int obj_key, String riname) 
+    public RemoteObjectRef(InetSocketAddress address, long id) 
     {
-	IP_adr=ip;
-	Port=port;
-	Obj_Key=obj_key;
-	Remote_Interface_Name=riname;
+    	this.address=address;
+    	this.id=id;
     }
 
     // this method is important, since it is a stub creator.

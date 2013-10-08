@@ -15,16 +15,32 @@ import java.util.Map;
 public class RMIHandler implements Runnable{
 
 	private ServerSocket server;
-	private Map<String, Object> localObjects;
+	private Map<Long, RemoteObj> localObjects;
+	private InetSocketAddress registry;
+	private InetSocketAddress localHost;
 	
-	public RMIHandler(int port) throws IOException{
+	public RMIHandler(int port, InetSocketAddress registry) throws IOException{
 		
 		server = new ServerSocket(port);
-		localObjects = new HashMap<String, Object>();
-		//^ INCORRECT-------------------------------------------
-		//should either be instantiated to an ACTUAL list, of what is ALREADY bound to this node
-		//OR we have to add bind() functionality.
+		localHost=new InetSocketAddress(InetAddress.getLocalHost(),server.getLocalPort());
+		this.registry=registry;
+		localObjects = new HashMap<Long, RemoteObj>();
 	}
+	
+	//Registers a remote object r on the server as well as adding
+	//the id to the list of local objects
+	public RemoteObjectRef registerObject(RemoteObj r)
+	{
+		RegistryRequest req = new RegistryRequest();
+		req.type=RegistryRequest.RequestType.REGISTER;
+		req.address=localHost;
+
+		RegistryResponse resp = sendRequest(req);
+		RemoteObjectRef ref = new RemoteObjectRef(localHost,resp.id);
+		localObjects.put(resp.id, r);
+		return ref;
+	}
+	
 	
 	//handles connections concurrently
 	private class ConnectionHandler implements Runnable{
@@ -72,7 +88,7 @@ public class RMIHandler implements Runnable{
 					//check to see if an argument is a ROR, if it is, then we convert it to a stub.
 					for(int i = 0; i < arguments.length; i++){
 						//Remote Parameter, converts to stub
-						if(RMIMessage.class.isAssignableFrom(arguments[i].getClass())){
+						if(RemoteObjectRef.class.isAssignableFrom(arguments[i].getClass())){
 							
 							arguments[i] = ((RemoteObjectRef)arguments[i]).localise();
 						}
@@ -125,6 +141,32 @@ public class RMIHandler implements Runnable{
 			}
 			
 		}
+	}
+	
+	//Sends a registry request to the server and returns the response
+	private RegistryResponse sendRequest(RegistryRequest req)
+	{
+		RegistryResponse resp = null;
+		try
+		{
+			Socket client = new Socket(registry.getAddress(),registry.getPort());
+			OutputStream out = client.getOutputStream();
+			ObjectOutput objOut = new ObjectOutputStream(out);
+		
+			objOut.writeObject(req);
+
+			InputStream in = client.getInputStream();
+			ObjectInput objIn = new ObjectInputStream(in);
+			
+			resp = (RegistryResponse) objIn.readObject();
+			client.close();
+			
+		} catch (IOException e) {
+			System.out.println("Error: Unable to connect to Registry Server");
+		} catch (ClassNotFoundException e) {
+			System.out.println("Error: Invalid reponse from Registry Server");
+		}
+		return resp;
 	}
 
 }

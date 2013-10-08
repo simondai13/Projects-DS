@@ -5,8 +5,9 @@ public class RegistryResponse implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	public enum ResponseType {
-		OK,NAME_ALREADY_EXISTS,NAME_NOT_FOUND
+		OK,NOT_FOUND
 	}
 	public ResponseType type;
 	InetSocketAddress address;
+	long id;
 }
