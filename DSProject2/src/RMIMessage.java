@@ -10,13 +10,17 @@ public class RMIMessage implements Serializable{
 	//if EXCEPTION, should be instance of the thrown Exception
 	private Object arguments;
 	
-	private Object reference;
+	private String ownerID;
 	private String methodName;
+	private Class[] paramTypes;
 	
-	public RMIMessage(String type, Object arguments, Object reference, String methodName){
+	public RMIMessage(String type, Object arguments, String ownerID, String methodName, Class[] paramTypes){
 		
 		this.type = type;
 		this.arguments = arguments;
+		this.ownerID = ownerID;
+		this.methodName = methodName;
+		this.paramTypes = paramTypes;
 	}
 	
 	public Object getArguments(){
@@ -29,14 +33,19 @@ public class RMIMessage implements Serializable{
 		return type;
 	}
 	
-	public Object getReference(){
+	public String getOwnerID(){
 		
-		return reference;
+		return ownerID;
 	}
 	
 	public String getMethodName(){
 		
 		return methodName;
+	}
+	
+	public Class[] getParamTypes(){
+		
+		return paramTypes;
 	}
 	
 	
