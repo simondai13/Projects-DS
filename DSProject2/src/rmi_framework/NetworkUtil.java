@@ -10,9 +10,18 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import example.*;
+
 //Manages connections to the registry
 public class NetworkUtil {
 
+	//hardcoded stub generators 
+	public static StringReverse_stub getStringReverseStub(String id, InetSocketAddress objLocation){
+		
+		return new StringReverse_stub(id, objLocation);
+	}
+	
+	
 	
 	public static InetSocketAddress registryLookup(InetSocketAddress registryLocation, String id){
 
