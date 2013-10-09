@@ -11,17 +11,19 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 
 import rmi_framework.RMIMessage;
 
 //marshalls RMIMessages
-public class StringReverse_stub {
+public class GlobalStringReverse_stub {
 
 	private String objectID;
 	private InetAddress objLocation;
 	private int objPort;
 
-	public StringReverse_stub(){
+	public GlobalStringReverse_stub(){
 		
 		objectID = "0";
 		try {
@@ -32,7 +34,7 @@ public class StringReverse_stub {
 		}
 		objPort = 5545;
 	}
-	public StringReverse_stub(String objectID, InetSocketAddress objectLocation){
+	public GlobalStringReverse_stub(String objectID, InetSocketAddress objectLocation){
 		
 		this.objectID = objectID;
 		objLocation = objectLocation.getAddress();
@@ -55,27 +57,22 @@ public class StringReverse_stub {
 			return null;
 		return (String)result;
 	}
-	
-	public String getAppendage() throws Throwable{
-		Object[] arguments = new Object[0];
-		Class[] argTypes = new Class[0];
+
+	public List<String> globalReverse(List<String> l, StringReverse reverser) throws Throwable{
+
+		Object[] arguments = new Object[2];
+		arguments[0] = l;
+		arguments[1] = reverser;
 		
-		Object result = handleConnection("getAppendage", arguments, argTypes);
+		Class[] argTypes = new Class[2];
+		argTypes[0] = l.getClass();
+		argTypes[1] = reverser.getClass();
+		
+		Object result = handleConnection("globalReverse", arguments, argTypes);
+
 		if(result == null)
 			return null;
-		return (String)result;
-	}
-	
-	public void setAppendage(String newApp)throws Throwable{
-		
-		Object[] arguments = new Object[1];
-		arguments[0] = newApp;
-		
-		Class[] argTypes = new Class[1];
-		argTypes[0] = newApp.getClass();
-
-		Object result = handleConnection("setAppendage", arguments, argTypes);
-		
+		return (List<String>)result;
 	}
 	
 	//the most abstract I could make it right now
