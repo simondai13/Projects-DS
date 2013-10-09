@@ -10,11 +10,7 @@ public class Main2 {
 	public static void main(String[] args) throws Exception{
 		
 
-		RMIHandler rh = new RMIHandler(Main.regAddress, 5445);
-		InetSocketAddress handlerAddress = new InetSocketAddress(InetAddress.getLocalHost(), 5445);
-		Thread handlerThread = new Thread(rh);
-		handlerThread.start();
-		
+		//get stub for the StringReverse class run in the main class
 		
 	}
 }
