@@ -16,7 +16,7 @@ import java.util.Map;
 public class RMIHandler implements Runnable{
 
 	private ServerSocket server;
-	private Map<String, RemoteObjectRef> localObjects;
+	private Map<String, RemoteObj> localObjects;
 	private InetSocketAddress registry;
 	private InetSocketAddress localHost;
 	
@@ -25,23 +25,21 @@ public class RMIHandler implements Runnable{
 		server = new ServerSocket(port);
 		localHost=new InetSocketAddress(InetAddress.getLocalHost(),server.getLocalPort());
 		this.registry=registry;
-		localObjects = new HashMap<String, RemoteObjectRef>();
+		localObjects = new HashMap<String, RemoteObj>();
 	}
 	
 	//Registers a remote object r on the registry as well as adding
 	//the id to the list of local objects
-	public boolean registerObject(RemoteObj r, String name)
+	public boolean registerObject(RemoteObj r, Class<?> remoteObjType)
 	{
 		//if id in use, return false
-		if(!NetworkUtil.registryRegister(registry, localHost, name))
+		RemoteObjectRef obj = new RemoteObjectRef(localHost,r.getRMIName(),remoteObjType);
+		if(!NetworkUtil.registryRegister(registry, obj))
 			return false;
 		
-		//MAKE ID A STRING
-		
-		RemoteObjectRef ref = new RemoteObjectRef(localHost,name);
-		localObjects.put(name, ref);
+		//Store a local reference to the actual object
+		localObjects.put(obj.name, r);
 		return true;
-		
 	}
 	
 	
@@ -84,7 +82,6 @@ public class RMIHandler implements Runnable{
 					}
 					
 					String methodName = msg.getMethodName();
-					Class[] paramTypes = msg.getParamTypes(); 
 
 					//get the arguments
 					Object[] arguments = (Object[])msg.getArguments();
@@ -101,7 +98,7 @@ public class RMIHandler implements Runnable{
 					Method method = null;
 					Object toReturn = null;
 					try {
-						method = obj.getClass().getMethod(methodName, paramTypes);
+						method = obj.getClass().getMethod(methodName, msg.getParamTypes());
 						toReturn = method.invoke(obj, arguments);
 					} catch (NoSuchMethodException | SecurityException e1) {
 
@@ -112,12 +109,18 @@ public class RMIHandler implements Runnable{
 						e2.printStackTrace();
 					} catch (Exception e){
 						//method throws an exception, write exception to client
-						RMIMessage exceptionMessage = new RMIMessage(RMIMessage.RMIMessageType.EXCEPTION, e, null, methodName, paramTypes);
+						Object[] returnArgs = new Object[1];
+						returnArgs[0]=e;
+						RMIMessage exceptionMessage = new RMIMessage
+								(RMIMessage.RMIMessageType.EXCEPTION, returnArgs,null,methodName);
 						objOut.writeObject(exceptionMessage);
 						return;
 					}
 					//return the return value
-					RMIMessage returnMessage = new RMIMessage(RMIMessage.RMIMessageType.RETURN, toReturn, null, methodName, paramTypes);
+					Object[] returnArgs = new Object[1];
+					returnArgs[0]=toReturn;
+					RMIMessage returnMessage = 
+							new RMIMessage(RMIMessage.RMIMessageType.RETURN,returnArgs, null, methodName);
 					objOut.writeObject(returnMessage);
 				}
 				else {System.out.println("BAD REQUEST"); return;}

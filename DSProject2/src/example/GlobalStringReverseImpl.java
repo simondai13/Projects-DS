@@ -14,6 +14,7 @@ public class GlobalStringReverseImpl implements RemoteObj, GlobalStringReverse{
 
 		reverseIndex = rev;
 	}
+	public String getRMIName(){return "DUMMY";}
 	
 	public List<String> globalReverse(List<String> l, StringReverseImpl reverser)throws IndexOutOfBoundsException{
 

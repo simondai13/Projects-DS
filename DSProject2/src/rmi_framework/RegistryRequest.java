@@ -10,6 +10,6 @@ public class RegistryRequest implements Serializable{
 		REGISTER, LOOKUP, UNREGISTER
 	}
 	public RequestType type;
-	public InetSocketAddress address;
+	public RemoteObjectRef obj;
 	public String name;
 }

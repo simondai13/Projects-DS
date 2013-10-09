@@ -27,7 +27,7 @@ public class Main {
 		
 		//add local objects to each of those
 		StringReverseImpl sr = new StringReverseImpl("helloworld");
-		rh.registerObject(sr, 0);
+		//rh.registerObject(sr, 0);
 		
 		//add remote? objects?
 		

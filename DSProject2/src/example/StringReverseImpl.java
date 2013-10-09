@@ -35,4 +35,9 @@ public class StringReverseImpl implements RemoteObj, StringReverse{
 		else
 			appendage = newApp;
 	}
+	@Override
+	public String getRMIName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

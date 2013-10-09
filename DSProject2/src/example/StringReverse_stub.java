@@ -82,7 +82,7 @@ public class StringReverse_stub {
 	//the code in this function is universal across every method
 	private Object handleConnection(String methodName, Object[] arguments,Class[] argTypes)throws Throwable{
 
-		RMIMessage msg = new RMIMessage(RMIMessage.RMIMessageType.INVOKE, arguments, objectID, "reverse", argTypes);
+		RMIMessage msg = new RMIMessage(RMIMessage.RMIMessageType.INVOKE, arguments, objectID, "reverse");
 		
 		RMIMessage response = null;
 		try {
@@ -109,10 +109,10 @@ public class StringReverse_stub {
 		RMIMessage.RMIMessageType messageType = response.getMessageType();
 		switch(messageType){
 			case RETURN:
-				return (String)(response.getArguments());
+				return null;// (String)(response.getArguments());
 			case EXCEPTION:
-				Exception e = (Exception)(response.getArguments());
-				throw e.getCause();
+				//Exception e = (Exception)(response.getArguments());
+				//throw e.getCause();
 			default://shouldn't be reached
 		}
 		

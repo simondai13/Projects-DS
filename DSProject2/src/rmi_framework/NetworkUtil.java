@@ -21,9 +21,11 @@ public class NetworkUtil {
 		return new StringReverse_stub(id, objLocation);
 	}
 	
+	public static RemoteObj getRemoteObject(InetSocketAddress registryLocation, String name){
+		return registryLookup(registryLocation,name).localise();
+	}
 	
-	
-	public static InetSocketAddress registryLookup(InetSocketAddress registryLocation, String name) {
+	public static RemoteObjectRef registryLookup(InetSocketAddress registryLocation, String name) {
 
 		RegistryRequest req = new RegistryRequest();
 		req.type=RegistryRequest.RequestType.LOOKUP;
@@ -32,17 +34,17 @@ public class NetworkUtil {
 		RegistryResponse response = sendRequest(registryLocation, req);
 		
 		if(response.type == RegistryResponse.ResponseType.OK)
-			return response.address;
+			return response.obj;
 		
 		return null;
 	}
 	
-	public static boolean registryRegister(InetSocketAddress registryLocation, InetSocketAddress objLocation, String id){
+	public static boolean registryRegister(InetSocketAddress registryLocation, RemoteObjectRef obj){
 	
 		RegistryRequest req = new RegistryRequest();
 		req.type = RegistryRequest.RequestType.REGISTER;
-		req.address = objLocation;
-		req.name = id;
+		req.obj = obj;
+		req.name = obj.name;
 		
 		RegistryResponse resp = sendRequest(registryLocation, req);
 		if(resp.type == RegistryResponse.ResponseType.OK)
@@ -50,11 +52,11 @@ public class NetworkUtil {
 		return false;
 	}
 	
-	public static boolean registryUnregister(InetSocketAddress registryLocation, String id){
+	public static boolean registryUnregister(InetSocketAddress registryLocation, String name){
 		
 		RegistryRequest req = new RegistryRequest();
 		req.type = RegistryRequest.RequestType.UNREGISTER;
-		req.name = id;
+		req.name = name;
 		
 		RegistryResponse resp = sendRequest(registryLocation, req);
 		if(resp.type == RegistryResponse.ResponseType.OK)

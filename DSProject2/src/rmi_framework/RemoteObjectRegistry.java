@@ -15,10 +15,10 @@ public class RemoteObjectRegistry implements Runnable {
 	private ServerSocket server;
 	
 	//maps unique remote object names to locations 
-	private TreeMap<String,InetSocketAddress> remoteObjects;
+	private TreeMap<String,RemoteObjectRef> remoteObjects;
 	
 	public RemoteObjectRegistry(int portNum) throws IOException {
-		remoteObjects = new TreeMap<String, InetSocketAddress>();
+		remoteObjects = new TreeMap<String, RemoteObjectRef>();
 		server=new ServerSocket(portNum);
 	}
 	
@@ -59,8 +59,7 @@ public class RemoteObjectRegistry implements Runnable {
 					 		}
 					 		else
 					 		{
-					 			remoteObjects.put(req.name, req.address);
-					 			resp.name = req.name;
+					 			remoteObjects.put(req.name, req.obj);
 					 			resp.type = RegistryResponse.ResponseType.OK;
 					 		}
 					 		break;
@@ -72,7 +71,7 @@ public class RemoteObjectRegistry implements Runnable {
 					 		else
 					 		{
 					 			resp.type = RegistryResponse.ResponseType.OK;
-					 			resp.address = remoteObjects.get(req.name);
+					 			resp.obj = remoteObjects.get(req.name);
 					 		}
 					 		break;
 					 	case UNREGISTER :

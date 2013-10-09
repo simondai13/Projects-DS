@@ -9,6 +9,5 @@ public class RegistryResponse implements Serializable {
 		OK,NOT_FOUND,NAME_IN_USE
 	}
 	public ResponseType type;
-	InetSocketAddress address;
-	String name;
+	public RemoteObjectRef obj;
 }

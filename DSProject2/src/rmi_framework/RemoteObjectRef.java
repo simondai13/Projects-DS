@@ -1,39 +1,30 @@
 package rmi_framework;
 
+import java.io.Serializable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 
-public class RemoteObjectRef
+public class RemoteObjectRef implements Serializable
 {
+	private static final long serialVersionUID = 1L;
+	
 	InetSocketAddress address;
     String name;
+    Class<?> interfaceType;
 
-    public RemoteObjectRef(InetSocketAddress address, String name) 
+    public RemoteObjectRef(InetSocketAddress address, String name, Class<?> interfaceType) 
     {
     	this.address=address;
     	this.name=name;
+    	this.interfaceType = interfaceType;
     }
 
-    // this method is important, since it is a stub creator.
-    // 
-    Object localise()
+    RemoteObj localise()
     {
-	// Implement this as you like: essentially you should 
-	// create a new stub object and returns it.
-	// Assume the stub class has the name e.g.
-	//
-	//       Remote_Interface_Name + "_stub".
-	//
-	// Then you can create a new stub as follows:
-	// 
-	//       Class c = Class.forName(Remote_Interface_Name + "_stub");
-	//       Object o = c.newinstance()
-	//
-	// For this to work, your stub should have a constructor without arguments.
-	// You know what it does when it is called: it gives communication module
-	// all what it got (use CM's static methods), including its method name, 
-	// arguments etc., in a marshalled form, and CM (yourRMI) sends it out to 
-	// another place. 
-	// Here let it return null.
-	return null;
+    	InvocationHandler handler = new RMIStubInvocationHandler(address,name);
+    	return (RemoteObj) Proxy.newProxyInstance(interfaceType.getClassLoader(),
+                					new Class[] { interfaceType },
+                					handler);
     }
 }

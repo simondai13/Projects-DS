@@ -2,6 +2,7 @@ package rmi_framework;
 import java.io.Serializable;
 
 public class RMIMessage implements Serializable{
+	private static final long serialVersionUID = 1L;
 
 	public enum RMIMessageType{
 		INVOKE, RETURN, EXCEPTION
@@ -13,24 +14,27 @@ public class RMIMessage implements Serializable{
 	//if INVOKE, then should be a List of Objects the arguments to be used as the parameters
 	//if RETURN, should be return value
 	//if EXCEPTION, should be instance of the thrown Exception
-	private Object arguments;
+	private Object[] arguments;
 	
 	private String ownerID;
 	private String methodName;
-	private Class[] paramTypes;
+	private Class<?>[] paramTypes;
 	
 	
 	
-	public RMIMessage(RMIMessageType type, Object arguments, String ownerID, String methodName, Class[] paramTypes){
+	public RMIMessage(RMIMessageType type, Object[] arguments, String ownerID, String methodName){
 		
 		this.type = type;
 		this.arguments = arguments;
 		this.ownerID = ownerID;
 		this.methodName = methodName;
-		this.paramTypes = paramTypes;
+		this.paramTypes = new Class[arguments.length];
+		for(int i =0; i<arguments.length; i++){
+			paramTypes[i]=arguments.getClass();
+		}
 	}
 	
-	public Object getArguments(){
+	public Object[] getArguments(){
 		
 		return arguments;
 	}
@@ -50,7 +54,7 @@ public class RMIMessage implements Serializable{
 		return methodName;
 	}
 	
-	public Class[] getParamTypes(){
+	public Class<?>[] getParamTypes(){
 		
 		return paramTypes;
 	}
