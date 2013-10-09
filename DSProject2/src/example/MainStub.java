@@ -14,6 +14,7 @@ public class MainStub {
 		Thread registryThread = new Thread(registry);
 		registryThread.start();
 		
+		
 		//Create an RMI handler
 		InetSocketAddress regAddress = new InetSocketAddress(InetAddress.getLocalHost(), 5444);
 		RMIHandler rh = new RMIHandler(regAddress, 5445);
@@ -28,9 +29,9 @@ public class MainStub {
 		db1.setName(4, "Ma-the-vaa");
 		//Add this to our first registry (port 5445)
 		rh.registerObject(db1, Database.class);
+	
 		
-		
-		RMIHandler rh2 = new RMIHandler(regAddress, 5445);
+		RMIHandler rh2 = new RMIHandler(regAddress, 5446);
 		InetSocketAddress handler2Address = new InetSocketAddress(InetAddress.getLocalHost(), 5446);
 		Thread handler2Thread = new Thread(rh2);
 		handler2Thread.start();
@@ -40,11 +41,13 @@ public class MainStub {
 		db2.setName(6, "Josh");
 		db2.setName(7, "Chris");
 		rh.registerObject(db2, Database.class);
-		
+
+		System.out.println("1");
 		//Get some stubs to our databases
 		Database d1Ref = (Database) NetworkUtil.getRemoteObject(regAddress, "Database1");
 		Database d2Ref = (Database) NetworkUtil.getRemoteObject(regAddress, "Database2");
-		
+
+		System.out.println("100");
 		//The second database should now have all the items in our first database
 		d1Ref.copyTo(d2Ref);
 		db2.printContents();

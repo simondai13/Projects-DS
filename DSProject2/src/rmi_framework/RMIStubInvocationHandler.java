@@ -20,26 +20,31 @@ public class RMIStubInvocationHandler implements InvocationHandler {
 	
 	public RMIStubInvocationHandler(InetSocketAddress registryLocation, String name){
 		this.registryLocation=registryLocation;
+
 		this.objLocation= NetworkUtil.registryLookup(registryLocation,name).address;
 		this.name = name;
 	}
 	
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-		
+		System.out.println("[InvocationHandler] methodName:" + method.getName());
+		if(method.getName().equals("getRMIName")){
+			return this.name;
+		}
 		//In both the cases where we are trying to pass a remote object or remote object stub 
 		//as an argument, we need to recreate the stub on the other side
 		for(int i = 0; i < args.length; i++){
 			if(RemoteObj.class.isAssignableFrom(args[i].getClass())){
 				RemoteObj r = (RemoteObj) args[i];
 				RemoteObjectRef obj = NetworkUtil.registryLookup(registryLocation, r.getRMIName());
+				System.out.println("[InvocationHandler] works");
 				args[i] = obj;
 			}
 			//Otherwise, we just use the copied object
 		}
 		
 		RMIMessage msg = new RMIMessage(RMIMessage.RMIMessageType.INVOKE, 
-										args, name, method.getName());
+										args, name, method.getName(), method.getParameterTypes());
 		
 		RMIMessage response = null;
 		try {

@@ -82,7 +82,7 @@ public class StringReverse_stub {
 	//the code in this function is universal across every method
 	private Object handleConnection(String methodName, Object[] arguments,Class[] argTypes)throws Throwable{
 
-		RMIMessage msg = new RMIMessage(RMIMessage.RMIMessageType.INVOKE, arguments, objectID, "reverse");
+		RMIMessage msg = new RMIMessage(RMIMessage.RMIMessageType.INVOKE, arguments, objectID, "reverse", argTypes);
 		
 		RMIMessage response = null;
 		try {

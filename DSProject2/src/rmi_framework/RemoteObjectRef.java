@@ -20,9 +20,11 @@ public class RemoteObjectRef implements Serializable
     	this.interfaceType = interfaceType;
     }
 
-    RemoteObj localise()
+    RemoteObj localise(InetSocketAddress registryLocation)
     {
-    	InvocationHandler handler = new RMIStubInvocationHandler(address,name);
+		System.out.println("9");
+    	InvocationHandler handler = new RMIStubInvocationHandler(registryLocation,name);
+    	System.out.println("10");
     	return (RemoteObj) Proxy.newProxyInstance(interfaceType.getClassLoader(),
                 					new Class[] { interfaceType },
                 					handler);

@@ -22,7 +22,7 @@ public class NetworkUtil {
 	}
 	
 	public static RemoteObj getRemoteObject(InetSocketAddress registryLocation, String name){
-		return registryLookup(registryLocation,name).localise();
+		return registryLookup(registryLocation,name).localise(registryLocation);
 	}
 	
 	public static RemoteObjectRef registryLookup(InetSocketAddress registryLocation, String name) {
@@ -32,7 +32,7 @@ public class NetworkUtil {
 		req.name = name;
 		
 		RegistryResponse response = sendRequest(registryLocation, req);
-		
+
 		if(response.type == RegistryResponse.ResponseType.OK)
 			return response.obj;
 		
@@ -75,12 +75,16 @@ public class NetworkUtil {
 			OutputStream out = client.getOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(out);
 		
+
+			System.out.println("Sending Request to" +registryLocation.toString()+req.name);
 			objOut.writeObject(req);
 
 			InputStream in = client.getInputStream();
 			ObjectInput objIn = new ObjectInputStream(in);
 			
 			resp = (RegistryResponse) objIn.readObject();
+
+			System.out.println("Received Request");
 			client.close();
 			
 		} catch (IOException e) {

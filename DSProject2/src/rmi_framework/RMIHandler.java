@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,7 +69,7 @@ public class RMIHandler implements Runnable{
 				}
 				RMIMessage msg = (RMIMessage) messageObj;
 				
-				if(msg.getMessageType().equals("INVOKE")){
+				if(msg.getMessageType() == RMIMessage.RMIMessageType.INVOKE){
 					
 					//invoke method with arguments.
 					
@@ -90,7 +91,7 @@ public class RMIHandler implements Runnable{
 						//Remote Parameter, converts to stub
 						if(RemoteObjectRef.class.isAssignableFrom(arguments[i].getClass())){
 							
-							arguments[i] = ((RemoteObjectRef)arguments[i]).localise();
+							arguments[i] = ((RemoteObjectRef)arguments[i]).localise(registry);
 						}
 						//Otherwise, we just use the copied object
 					}
@@ -98,7 +99,13 @@ public class RMIHandler implements Runnable{
 					Method method = null;
 					Object toReturn = null;
 					try {
+
+						System.out.println("[RMIHandler] methodName: " + methodName);
+						System.out.println("[RMIHandler] objectType: " + obj.getClass());
+						System.out.println("[RMIHandler] paramTypes: " + msg.getParamTypes()[0].getName());
+						
 						method = obj.getClass().getMethod(methodName, msg.getParamTypes());
+						
 						toReturn = method.invoke(obj, arguments);
 					} catch (NoSuchMethodException | SecurityException e1) {
 
@@ -112,7 +119,7 @@ public class RMIHandler implements Runnable{
 						Object[] returnArgs = new Object[1];
 						returnArgs[0]=e;
 						RMIMessage exceptionMessage = new RMIMessage
-								(RMIMessage.RMIMessageType.EXCEPTION, returnArgs,null,methodName);
+								(RMIMessage.RMIMessageType.EXCEPTION, returnArgs,null,methodName, msg.getParamTypes());
 						objOut.writeObject(exceptionMessage);
 						return;
 					}
@@ -120,7 +127,7 @@ public class RMIHandler implements Runnable{
 					Object[] returnArgs = new Object[1];
 					returnArgs[0]=toReturn;
 					RMIMessage returnMessage = 
-							new RMIMessage(RMIMessage.RMIMessageType.RETURN,returnArgs, null, methodName);
+							new RMIMessage(RMIMessage.RMIMessageType.RETURN,returnArgs, null, methodName, msg.getParamTypes());
 					objOut.writeObject(returnMessage);
 				}
 				else {System.out.println("BAD REQUEST"); return;}

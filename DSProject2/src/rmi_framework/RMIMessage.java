@@ -22,16 +22,13 @@ public class RMIMessage implements Serializable{
 	
 	
 	
-	public RMIMessage(RMIMessageType type, Object[] arguments, String ownerID, String methodName){
+	public RMIMessage(RMIMessageType type, Object[] arguments, String ownerID, String methodName, Class[] paramTypes){
 		
 		this.type = type;
 		this.arguments = arguments;
 		this.ownerID = ownerID;
 		this.methodName = methodName;
-		this.paramTypes = new Class[arguments.length];
-		for(int i =0; i<arguments.length; i++){
-			paramTypes[i]=arguments.getClass();
-		}
+		this.paramTypes = paramTypes;
 	}
 	
 	public Object[] getArguments(){
