@@ -25,19 +25,17 @@ public class NetworkUtil {
 		return response.address;
 	}
 	
-	public static void registryRegister(InetSocketAddress registryLocation, InetSocketAddress objLocation, String id){
+	public static boolean registryRegister(InetSocketAddress registryLocation, InetSocketAddress objLocation, String id){
+	
+		RegistryRequest req = new RegistryRequest();
+		req.type = RegistryRequest.RequestType.REGISTER;
+		req.address = objLocation;
+		req.id = 0;//CHANGE THIS
 		
-		boolean idUnique = true;
-		while(idUnique){
-			RegistryRequest req = new RegistryRequest();
-			req.type = RegistryRequest.RequestType.REGISTER;
-			req.address = objLocation;
-			req.id = 0;//CHANGE THIS
-			
-			RegistryResponse resp = sendRequest(registryLocation, req);
-			if(resp.type == RegistryResponse.ResponseType.OK)
-				idUnique = false;
-		}
+		RegistryResponse resp = sendRequest(registryLocation, req);
+		if(resp.type == RegistryResponse.ResponseType.OK)
+			return true;
+		return false;
 	}
 	
 	public static void registryUnregister(InetSocketAddress registryLocation, String id){
