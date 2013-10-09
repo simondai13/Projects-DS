@@ -3,7 +3,9 @@ package example;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GlobalStringReverse {
+import rmi_framework.RemoteObj;
+
+public class GlobalStringReverse implements RemoteObj{
 
 	//number of characters to reverse
 	private int reverseIndex;

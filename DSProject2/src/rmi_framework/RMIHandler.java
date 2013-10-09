@@ -20,7 +20,7 @@ public class RMIHandler implements Runnable{
 	private InetSocketAddress registry;
 	private InetSocketAddress localHost;
 	
-	public RMIHandler(int port, InetSocketAddress registry) throws IOException{
+	public RMIHandler(InetSocketAddress registry, int port) throws IOException{
 		
 		server = new ServerSocket(port);
 		localHost=new InetSocketAddress(InetAddress.getLocalHost(),server.getLocalPort());
@@ -30,16 +30,16 @@ public class RMIHandler implements Runnable{
 	
 	//Registers a remote object r on the server as well as adding
 	//the id to the list of local objects
-	public RemoteObjectRef registerObject(RemoteObj r)
+	public void registerObject(RemoteObj r, long id)
 	{
-		RegistryRequest req = new RegistryRequest();
-		req.type=RegistryRequest.RequestType.REGISTER;
-		req.address=localHost;
-
-		RegistryResponse resp = sendRequest(req);
-		RemoteObjectRef ref = new RemoteObjectRef(localHost,resp.id);
-		localObjects.put(resp.id, r);
-		return ref;
+		
+		NetworkUtil.registryRegister(registry, localHost, Long.toString(id));
+		
+		//MAKE ID A STRING
+		
+		RemoteObjectRef ref = new RemoteObjectRef(localHost,id);
+		
+		localObjects.put(id, r);
 	}
 	
 	
@@ -142,32 +142,6 @@ public class RMIHandler implements Runnable{
 			}
 			
 		}
-	}
-	
-	//Sends a registry request to the server and returns the response
-	private RegistryResponse sendRequest(RegistryRequest req)
-	{
-		RegistryResponse resp = null;
-		try
-		{
-			Socket client = new Socket(registry.getAddress(),registry.getPort());
-			OutputStream out = client.getOutputStream();
-			ObjectOutput objOut = new ObjectOutputStream(out);
-		
-			objOut.writeObject(req);
-
-			InputStream in = client.getInputStream();
-			ObjectInput objIn = new ObjectInputStream(in);
-			
-			resp = (RegistryResponse) objIn.readObject();
-			client.close();
-			
-		} catch (IOException e) {
-			System.out.println("Error: Unable to connect to Registry Server");
-		} catch (ClassNotFoundException e) {
-			System.out.println("Error: Invalid reponse from Registry Server");
-		}
-		return resp;
 	}
 
 }

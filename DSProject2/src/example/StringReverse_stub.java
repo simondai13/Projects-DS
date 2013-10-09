@@ -13,8 +13,6 @@ import java.net.UnknownHostException;
 
 import rmi_framework.RMIMessage;
 
-
-
 //marshalls RMIMessages
 public class StringReverse_stub {
 
