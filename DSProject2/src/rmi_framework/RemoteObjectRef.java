@@ -5,12 +5,12 @@ import java.net.InetSocketAddress;
 public class RemoteObjectRef
 {
 	InetSocketAddress address;
-    long id;
+    String name;
 
-    public RemoteObjectRef(InetSocketAddress address, long id) 
+    public RemoteObjectRef(InetSocketAddress address, String name) 
     {
     	this.address=address;
-    	this.id=id;
+    	this.name=name;
     }
 
     // this method is important, since it is a stub creator.

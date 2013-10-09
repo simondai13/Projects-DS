@@ -16,7 +16,7 @@ import java.util.Map;
 public class RMIHandler implements Runnable{
 
 	private ServerSocket server;
-	private Map<Long, RemoteObjectRef> localObjects;
+	private Map<String, RemoteObjectRef> localObjects;
 	private InetSocketAddress registry;
 	private InetSocketAddress localHost;
 	
@@ -25,21 +25,21 @@ public class RMIHandler implements Runnable{
 		server = new ServerSocket(port);
 		localHost=new InetSocketAddress(InetAddress.getLocalHost(),server.getLocalPort());
 		this.registry=registry;
-		localObjects = new HashMap<Long, RemoteObjectRef>();
+		localObjects = new HashMap<String, RemoteObjectRef>();
 	}
 	
 	//Registers a remote object r on the registry as well as adding
 	//the id to the list of local objects
-	public boolean registerObject(RemoteObj r, long id)
+	public boolean registerObject(RemoteObj r, String name)
 	{
 		//if id in use, return false
-		if(!NetworkUtil.registryRegister(registry, localHost, Long.toString(id)))
+		if(!NetworkUtil.registryRegister(registry, localHost, name))
 			return false;
 		
 		//MAKE ID A STRING
 		
-		RemoteObjectRef ref = new RemoteObjectRef(localHost,id);
-		localObjects.put(id, ref);
+		RemoteObjectRef ref = new RemoteObjectRef(localHost,name);
+		localObjects.put(name, ref);
 		return true;
 		
 	}

@@ -11,5 +11,5 @@ public class RegistryRequest implements Serializable{
 	}
 	public RequestType type;
 	public InetSocketAddress address;
-	public long id;
+	public String name;
 }

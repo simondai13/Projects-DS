@@ -23,15 +23,18 @@ public class NetworkUtil {
 	
 	
 	
-	public static InetSocketAddress registryLookup(InetSocketAddress registryLocation, String id){
+	public static InetSocketAddress registryLookup(InetSocketAddress registryLocation, String name) {
 
 		RegistryRequest req = new RegistryRequest();
 		req.type=RegistryRequest.RequestType.LOOKUP;
-		req.id = 0;//CHANGE THIS WHEN WE CHANGE IDS TO STRINGS (id)
+		req.name = name;
 		
 		RegistryResponse response = sendRequest(registryLocation, req);
 		
-		return response.address;
+		if(response.type == RegistryResponse.ResponseType.OK)
+			return response.address;
+		
+		return null;
 	}
 	
 	public static boolean registryRegister(InetSocketAddress registryLocation, InetSocketAddress objLocation, String id){
@@ -39,7 +42,7 @@ public class NetworkUtil {
 		RegistryRequest req = new RegistryRequest();
 		req.type = RegistryRequest.RequestType.REGISTER;
 		req.address = objLocation;
-		req.id = 0;//CHANGE THIS
+		req.name = id;
 		
 		RegistryResponse resp = sendRequest(registryLocation, req);
 		if(resp.type == RegistryResponse.ResponseType.OK)
@@ -47,13 +50,17 @@ public class NetworkUtil {
 		return false;
 	}
 	
-	public static void registryUnregister(InetSocketAddress registryLocation, String id){
+	public static boolean registryUnregister(InetSocketAddress registryLocation, String id){
 		
 		RegistryRequest req = new RegistryRequest();
 		req.type = RegistryRequest.RequestType.UNREGISTER;
-		req.id = 0;//CHANGE THIS 
+		req.name = id;
 		
-		sendRequest(registryLocation, req);
+		RegistryResponse resp = sendRequest(registryLocation, req);
+		if(resp.type == RegistryResponse.ResponseType.OK)
+			return true;
+		return false;
+		
 	}
 	
 	//Sends a registry request to the server and returns the response

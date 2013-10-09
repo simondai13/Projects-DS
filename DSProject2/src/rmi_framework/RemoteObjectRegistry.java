@@ -15,12 +15,10 @@ public class RemoteObjectRegistry implements Runnable {
 	private ServerSocket server;
 	
 	//maps unique remote object names to locations 
-	private TreeMap<Long,InetSocketAddress> remoteObjects;
-	private long registryCounter;
+	private TreeMap<String,InetSocketAddress> remoteObjects;
 	
 	public RemoteObjectRegistry(int portNum) throws IOException {
-		registryCounter = 0;
-		remoteObjects = new TreeMap<Long, InetSocketAddress>();
+		remoteObjects = new TreeMap<String, InetSocketAddress>();
 		server=new ServerSocket(portNum);
 	}
 	
@@ -56,31 +54,35 @@ public class RemoteObjectRegistry implements Runnable {
 				 {
 					 switch (req.type) {
 					 	case REGISTER :
-					 		resp.id=registryCounter;
-					 		registryCounter++;
-					 		
-					 		remoteObjects.put(resp.id, req.address);
-					 		resp.type = RegistryResponse.ResponseType.OK;
+					 		if(remoteObjects.containsKey(req.name)){
+					 			resp.type = RegistryResponse.ResponseType.NAME_IN_USE;
+					 		}
+					 		else
+					 		{
+					 			remoteObjects.put(req.name, req.address);
+					 			resp.name = req.name;
+					 			resp.type = RegistryResponse.ResponseType.OK;
+					 		}
 					 		break;
 					 	case LOOKUP :
-					 		if(!remoteObjects.containsKey(req.id))
+					 		if(!remoteObjects.containsKey(req.name))
 					 		{
 					 			resp.type = RegistryResponse.ResponseType.NOT_FOUND;
 					 		}
 					 		else
 					 		{
 					 			resp.type = RegistryResponse.ResponseType.OK;
-					 			resp.address = remoteObjects.get(req.id);
+					 			resp.address = remoteObjects.get(req.name);
 					 		}
 					 		break;
 					 	case UNREGISTER :
-					 		if(!remoteObjects.containsKey(req.id))
+					 		if(!remoteObjects.containsKey(req.name))
 					 		{
 					 			resp.type = RegistryResponse.ResponseType.NOT_FOUND;
 					 		}
 					 		else
 					 		{
-					 			remoteObjects.remove(req.id);
+					 			remoteObjects.remove(req.name);
 					 			resp.type = RegistryResponse.ResponseType.OK;
 					 		}
 					 		break;
