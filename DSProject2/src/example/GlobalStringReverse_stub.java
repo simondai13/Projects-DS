@@ -17,7 +17,7 @@ import java.util.List;
 import rmi_framework.RMIMessage;
 
 //marshalls RMIMessages
-public class GlobalStringReverse_stub {
+public class GlobalStringReverse_stub implements GlobalStringReverse{
 
 	private String objectID;
 	private InetAddress objLocation;
@@ -40,25 +40,8 @@ public class GlobalStringReverse_stub {
 		objLocation = objectLocation.getAddress();
 		objPort = objectLocation.getPort();
 	}
-	
-	
-	public String reverse(String s, Integer numToRev)throws Throwable{
-		
-		Object[] arguments = new Object[2];
-		arguments[0] = s;
-		arguments[1] = numToRev;
-		
-		Class[] argTypes = new Class[2];
-		argTypes[0] = s.getClass();
-		argTypes[1] = numToRev.getClass();
-		
-		Object result = handleConnection("reverse", arguments, argTypes);
-		if(result == null)
-			return null;
-		return (String)result;
-	}
 
-	public List<String> globalReverse(List<String> l, StringReverse reverser) throws Throwable{
+	public List<String> globalReverse(List<String> l, StringReverseImpl reverser) throws IndexOutOfBoundsException{
 
 		Object[] arguments = new Object[2];
 		arguments[0] = l;
@@ -68,7 +51,12 @@ public class GlobalStringReverse_stub {
 		argTypes[0] = l.getClass();
 		argTypes[1] = reverser.getClass();
 		
-		Object result = handleConnection("globalReverse", arguments, argTypes);
+		Object result = null;
+		try {
+			result = handleConnection("globalReverse", arguments, argTypes);
+		} catch (Throwable e) {
+			throw new IndexOutOfBoundsException(e.getMessage());
+		}
 
 		if(result == null)
 			return null;

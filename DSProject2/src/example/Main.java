@@ -26,7 +26,7 @@ public class Main {
 		handlerThread.start();
 		
 		//add local objects to each of those
-		StringReverse sr = new StringReverse("helloworld");
+		StringReverseImpl sr = new StringReverseImpl("helloworld");
 		rh.registerObject(sr, 0);
 		
 		//add remote? objects?
