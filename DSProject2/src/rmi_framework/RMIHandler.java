@@ -110,13 +110,15 @@ public class RMIHandler implements Runnable{
 					//get the arguments
 					Object[] arguments = (Object[])msg.getArguments();
 					//check to see if an argument is a ROR, if it is, then we convert it to a stub.
-					for(int i = 0; i < arguments.length; i++){
-						//Remote Parameter, converts to stub
-						if(RemoteObjectRef.class.isAssignableFrom(arguments[i].getClass())){
-							
-							arguments[i] = ((RemoteObjectRef)arguments[i]).localise(registry);
+					
+					if(arguments!=null){
+						for(int i = 0; i < arguments.length; i++){
+							//Remote Parameter, converts to stub
+							if(RemoteObjectRef.class.isAssignableFrom(arguments[i].getClass())){
+								arguments[i] = ((RemoteObjectRef)arguments[i]).localise(registry);
+							}
+							//Otherwise, we just use the copied object
 						}
-						//Otherwise, we just use the copied object
 					}
 					
 					Method method = null;
@@ -129,15 +131,19 @@ public class RMIHandler implements Runnable{
 						synchronized(obj){
 							toReturn = method.invoke(obj, arguments);
 						}
-					} catch (NoSuchMethodException | SecurityException e1) {
-
-						//FAILURE IN GETTING METHOD
+					} catch (NoSuchMethodException e){
 						System.out.println("Method not found");
-					} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e2) {
+					} catch (SecurityException e1) {
+						System.out.println("Security Exception");
+					} catch (IllegalAccessException e) {
+						e.printStackTrace();
+					} catch (IllegalArgumentException e) {
+						e.printStackTrace();
+					} catch (InvocationTargetException e) {
 
 						//method throws an exception, write exception to client
 						Object[] returnArgs = new Object[1];
-						returnArgs[0]=e2.getCause();
+						returnArgs[0]=e.getCause();
 						RMIMessage exceptionMessage = new RMIMessage
 								(RMIMessage.RMIMessageType.EXCEPTION, returnArgs,null,methodName, msg.getParamTypes());
 						objOut.writeObject(exceptionMessage);
@@ -145,7 +151,14 @@ public class RMIHandler implements Runnable{
 					} 
 					//return the return value
 					Object[] returnArgs = new Object[1];
-					returnArgs[0]=toReturn;
+					if(toReturn != null && RemoteObj.class.isAssignableFrom(toReturn.getClass())){
+							RemoteObj r = (RemoteObj) toReturn;
+							RemoteObjectRef returnRef = NetworkUtil.registryLookup(registry,r.getRMIName());
+							returnArgs[0]=returnRef;
+					}
+					else{
+						returnArgs[0]=toReturn;
+					}
 					RMIMessage returnMessage = 
 							new RMIMessage(RMIMessage.RMIMessageType.RETURN,returnArgs, null, methodName, msg.getParamTypes());
 					objOut.writeObject(returnMessage);

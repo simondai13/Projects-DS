@@ -42,15 +42,16 @@ public class RMIStubInvocationHandler implements InvocationHandler {
 		}
 		//In both the cases where we are trying to pass a remote object or remote object stub 
 		//as an argument, we need to recreate the stub on the other side
-		for(int i = 0; i < args.length; i++){
-			if(RemoteObj.class.isAssignableFrom(args[i].getClass())){
-				RemoteObj r = (RemoteObj) args[i];
-				RemoteObjectRef obj = NetworkUtil.registryLookup(registryLocation, r.getRMIName());
-				args[i] = obj;
+		if(args!=null){
+			for(int i = 0; i < args.length; i++){
+				if(RemoteObj.class.isAssignableFrom(args[i].getClass())){
+					RemoteObj r = (RemoteObj) args[i];
+					RemoteObjectRef obj = NetworkUtil.registryLookup(registryLocation, r.getRMIName());
+					args[i] = obj;
+				}
+				//Otherwise, we just use the copied object
 			}
-			//Otherwise, we just use the copied object
 		}
-		
 		RMIMessage msg = new RMIMessage(RMIMessage.RMIMessageType.INVOKE, 
 										args, name, method.getName(), method.getParameterTypes());
 		
@@ -78,6 +79,13 @@ public class RMIStubInvocationHandler implements InvocationHandler {
 		RMIMessage.RMIMessageType messageType = response.getMessageType();
 		switch(messageType){
 			case RETURN:
+				if(response.getArguments()[0]!=null){
+						//Remote Parameter, converts to stub
+						if(RemoteObjectRef.class.isAssignableFrom(response.getArguments()[0].getClass())){
+							return ((RemoteObjectRef)response.getArguments()[0]).localise(registryLocation);
+						}
+				}
+				
 				return response.getArguments()[0];
 			case EXCEPTION:
 				Exception e = (Exception)(response.getArguments()[0]);

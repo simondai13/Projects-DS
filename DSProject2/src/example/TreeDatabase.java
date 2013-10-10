@@ -44,5 +44,15 @@ public class TreeDatabase implements Database{
 		   System.out.print("\n");
 		}
 	}
+	
+	@Override
+	public Database getDatabase(){
+		return this;
+	}
+	
+	@Override
+	public void exceptionTest() throws NumberFormatException{
+		throw new NumberFormatException();
+	}
 }
 

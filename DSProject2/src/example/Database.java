@@ -13,4 +13,11 @@ public interface Database extends RemoteObj {
 	//would be more efficient without RMI, but it serves as a 
 	//rigorous test of passing Remote Objects as parameters
 	public void copyTo(Database d);
+	
+	//Simply return this database.  Trivial normally,
+	//but it shows ability to return a remote object
+	public Database getDatabase();
+	
+	//Test throwing an exception
+	public void exceptionTest() throws NumberFormatException;
 }

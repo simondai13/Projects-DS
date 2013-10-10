@@ -33,7 +33,7 @@ public class Main {
 		System.in.read();
 		
 
-		GlobalStringReverse globalReverser = (GlobalStringReverse)NetworkUtil.getRemoteObject(regAddress, "globalStringReverse1");
+		GlobalStringReverse globalReverser = (GlobalStringReverse)RMIHandler.getRemoteObject(regAddress, "globalStringReverse1");
 		
 		List<String> l = new ArrayList<String>();
 		l.add("Th");

@@ -43,12 +43,26 @@ public class MainStub {
 		rh.registerObject(db2, Database.class);
 
 		//Get some stubs to our databases
-		Database d1Ref = (Database) NetworkUtil.getRemoteObject(regAddress, "Database1");
-		Database d2Ref = (Database) NetworkUtil.getRemoteObject(regAddress, "Database2");
+		Database d1Ref = (Database) RMIHandler.getRemoteObject(regAddress, "Database1");
+		Database d2Ref = (Database) RMIHandler.getRemoteObject(regAddress, "Database2");
 
 		//The second database should now have all the items in our first database
 		d1Ref.copyTo(d2Ref);
 		db2.printContents();
+		
+		//Testing returning Remote objects
+		Database d2Ref2 = d2Ref.getDatabase();
+		System.out.println(" ");
+		d2Ref2.printContents();
+		System.out.println(" ");
+		
+		//Try RMI with some arbitrary exception
+		try {
+			d2Ref2.exceptionTest();
+		} catch (NumberFormatException e1) {
+			System.out.println("Exception properly passed!");
+		}
+		
 	}
 
 }

@@ -13,7 +13,7 @@ public class Main2 {
 
 		InetSocketAddress regAddress =  new InetSocketAddress(InetAddress.getLocalHost(), 5444);
 		//get stub for the StringReverse class run in the main class
-		StringReverse reverser = (StringReverse)NetworkUtil.getRemoteObject(regAddress, "stringReverse1");
+		StringReverse reverser = (StringReverse)RMIHandler.getRemoteObject(regAddress, "stringReverse1");
 		
 		System.out.println(reverser.reverse("ABCDE", 4));
 
