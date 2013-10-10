@@ -1,6 +1,8 @@
 package example;
 
-public interface StringReverse {
+import rmi_framework.RemoteObj;
+
+public interface StringReverse extends RemoteObj{
 
 	public String reverse(String s, Integer numToRev)throws IllegalArgumentException;
 	

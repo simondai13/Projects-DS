@@ -107,8 +107,6 @@ public class RemoteObjectRegistry implements Runnable {
 			try {
 				Socket client = server.accept();
 				
-				System.out.println("[Registry]Connection Request Received from " + client.getPort());
-				
 				//Generate a connection handle and run it in a 
 				//separate thread
 				ConnectionHandle ch = new ConnectionHandle(client);

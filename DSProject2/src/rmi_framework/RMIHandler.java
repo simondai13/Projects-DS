@@ -100,29 +100,26 @@ public class RMIHandler implements Runnable{
 					Object toReturn = null;
 					try {
 
-						System.out.println("[RMIHandler] methodName: " + methodName);
-						System.out.println("[RMIHandler] objectType: " + obj.getClass());
-						System.out.println("[RMIHandler] paramTypes: " + msg.getParamTypes()[0].getName());
-						
 						method = obj.getClass().getMethod(methodName, msg.getParamTypes());
 						
-						toReturn = method.invoke(obj, arguments);
+						//we lock the object we are invoking
+						synchronized(obj){
+							toReturn = method.invoke(obj, arguments);
+						}
 					} catch (NoSuchMethodException | SecurityException e1) {
 
 						//FAILURE IN GETTING METHOD
 						System.out.println("Method not found");
 					} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e2) {
-						//FAILURE IN INVOKING METHOD
-						e2.printStackTrace();
-					} catch (Exception e){
+
 						//method throws an exception, write exception to client
 						Object[] returnArgs = new Object[1];
-						returnArgs[0]=e;
+						returnArgs[0]=e2.getCause();
 						RMIMessage exceptionMessage = new RMIMessage
 								(RMIMessage.RMIMessageType.EXCEPTION, returnArgs,null,methodName, msg.getParamTypes());
 						objOut.writeObject(exceptionMessage);
 						return;
-					}
+					} 
 					//return the return value
 					Object[] returnArgs = new Object[1];
 					returnArgs[0]=toReturn;

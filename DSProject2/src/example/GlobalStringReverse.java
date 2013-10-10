@@ -2,7 +2,9 @@ package example;
 
 import java.util.List;
 
-public interface GlobalStringReverse {
+import rmi_framework.RemoteObj;
 
-	public List<String> globalReverse(List<String> l, StringReverseImpl reverser) throws IndexOutOfBoundsException;
+public interface GlobalStringReverse extends RemoteObj{
+
+	public List<String> globalReverse(List<String> l, StringReverse reverser) throws IndexOutOfBoundsException;
 }

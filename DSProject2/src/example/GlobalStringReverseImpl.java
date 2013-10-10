@@ -3,20 +3,28 @@ package example;
 import java.util.ArrayList;
 import java.util.List;
 
-import rmi_framework.RemoteObj;
-
-public class GlobalStringReverseImpl implements RemoteObj, GlobalStringReverse{
+public class GlobalStringReverseImpl implements GlobalStringReverse{
 
 	//number of characters to reverse
 	private int reverseIndex;
-	
+	public String name;
+
 	public GlobalStringReverseImpl(int rev){
 
+		name = "";
 		reverseIndex = rev;
 	}
-	public String getRMIName(){return "DUMMY";}
+	public GlobalStringReverseImpl(int rev, String name){
+
+		this.name = name;
+		reverseIndex = rev;
+	}
 	
-	public List<String> globalReverse(List<String> l, StringReverseImpl reverser)throws IndexOutOfBoundsException{
+	public String getRMIName(){
+		return name;
+	}
+	
+	public List<String> globalReverse(List<String> l, StringReverse reverser)throws IndexOutOfBoundsException{
 
 		List<String> toReturn = new ArrayList<String>();
 		for(String s : l){

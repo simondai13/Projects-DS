@@ -2,12 +2,12 @@ package example;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 
 import rmi_framework.*;
 
 public class Main {
-
-	public static InetSocketAddress regAddress;
 	
 	public static void main(String[] args) throws Exception{
 		
@@ -16,7 +16,7 @@ public class Main {
 		Thread registryThread = new Thread(registry);
 		registryThread.start();
 		
-		regAddress = new InetSocketAddress(InetAddress.getLocalHost(), 5444);
+		InetSocketAddress regAddress = new InetSocketAddress(InetAddress.getLocalHost(), 5444);
 		
 		//create new RMIHandler on this node
 
@@ -26,13 +26,24 @@ public class Main {
 		handlerThread.start();
 		
 		//add local objects to each of those
-		StringReverseImpl sr = new StringReverseImpl("helloworld");
-		//rh.registerObject(sr, 0);
+		StringReverseImpl sr = new StringReverseImpl("helloworld","stringReverse1");
+		rh.registerObject(sr, StringReverse.class);
 		
-		//add remote? objects?
+		System.out.println("Run Main2, then press enter");
+		System.in.read();
 		
-		//try having the local RMIHandler node call a method
+
+		GlobalStringReverse globalReverser = (GlobalStringReverse)NetworkUtil.getRemoteObject(regAddress, "globalStringReverse1");
 		
-		System.out.println("done");
+		List<String> l = new ArrayList<String>();
+		l.add("Th");
+		l.add("IS A ");
+		l.add("Testing");
+		l.add("Mechanism");
+		l.add("1234567");
+		
+		System.out.println(globalReverser.globalReverse(l, sr));
+
+		System.out.println("DONE");
 	}
 }

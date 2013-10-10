@@ -27,7 +27,6 @@ public class RMIStubInvocationHandler implements InvocationHandler {
 	
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-		System.out.println("[InvocationHandler] methodName:" + method.getName());
 		if(method.getName().equals("getRMIName")){
 			return this.name;
 		}
@@ -37,7 +36,6 @@ public class RMIStubInvocationHandler implements InvocationHandler {
 			if(RemoteObj.class.isAssignableFrom(args[i].getClass())){
 				RemoteObj r = (RemoteObj) args[i];
 				RemoteObjectRef obj = NetworkUtil.registryLookup(registryLocation, r.getRMIName());
-				System.out.println("[InvocationHandler] works");
 				args[i] = obj;
 			}
 			//Otherwise, we just use the copied object

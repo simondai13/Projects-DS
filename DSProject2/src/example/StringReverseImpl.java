@@ -5,13 +5,22 @@ public class StringReverseImpl implements RemoteObj, StringReverse{
 
 	
 	private String appendage;
-	
+	public String name;
+
 	public StringReverseImpl(String app){
 		
 		if(app == null)
 			appendage = "";
 		else
 			appendage = app;
+	}
+	public StringReverseImpl(String app, String name){
+		
+		if(app == null)
+			appendage = "";
+		else
+			appendage = app;
+		this.name = name;
 	}
 	
 	public String reverse(String s, Integer numToRev)throws IllegalArgumentException{
@@ -37,7 +46,7 @@ public class StringReverseImpl implements RemoteObj, StringReverse{
 	}
 	@Override
 	public String getRMIName() {
-		// TODO Auto-generated method stub
-		return null;
+
+		return name;
 	}
 }

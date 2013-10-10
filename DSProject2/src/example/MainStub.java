@@ -42,20 +42,13 @@ public class MainStub {
 		db2.setName(7, "Chris");
 		rh.registerObject(db2, Database.class);
 
-		System.out.println("1");
 		//Get some stubs to our databases
 		Database d1Ref = (Database) NetworkUtil.getRemoteObject(regAddress, "Database1");
 		Database d2Ref = (Database) NetworkUtil.getRemoteObject(regAddress, "Database2");
 
-		System.out.println("100");
 		//The second database should now have all the items in our first database
 		d1Ref.copyTo(d2Ref);
 		db2.printContents();
-		
-		
-		
-		
-
 	}
 
 }

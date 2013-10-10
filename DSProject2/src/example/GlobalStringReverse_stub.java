@@ -41,7 +41,7 @@ public class GlobalStringReverse_stub implements GlobalStringReverse{
 		objPort = objectLocation.getPort();
 	}
 
-	public List<String> globalReverse(List<String> l, StringReverseImpl reverser) throws IndexOutOfBoundsException{
+	public List<String> globalReverse(List<String> l, StringReverse reverser) throws IndexOutOfBoundsException{
 
 		Object[] arguments = new Object[2];
 		arguments[0] = l;
@@ -103,6 +103,10 @@ public class GlobalStringReverse_stub implements GlobalStringReverse{
 		
 		//also shouldn't be reached
 		return null;
+	}
+	@Override
+	public String getRMIName() {
+		return objectID;
 	}
 	
 }

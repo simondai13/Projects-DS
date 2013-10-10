@@ -22,9 +22,7 @@ public class RemoteObjectRef implements Serializable
 
     RemoteObj localise(InetSocketAddress registryLocation)
     {
-		System.out.println("9");
     	InvocationHandler handler = new RMIStubInvocationHandler(registryLocation,name);
-    	System.out.println("10");
     	return (RemoteObj) Proxy.newProxyInstance(interfaceType.getClassLoader(),
                 					new Class[] { interfaceType },
                 					handler);

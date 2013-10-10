@@ -75,8 +75,6 @@ public class NetworkUtil {
 			OutputStream out = client.getOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(out);
 		
-
-			System.out.println("Sending Request to" +registryLocation.toString()+req.name);
 			objOut.writeObject(req);
 
 			InputStream in = client.getInputStream();
@@ -84,7 +82,6 @@ public class NetworkUtil {
 			
 			resp = (RegistryResponse) objIn.readObject();
 
-			System.out.println("Received Request");
 			client.close();
 			
 		} catch (IOException e) {
