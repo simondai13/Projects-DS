@@ -15,12 +15,6 @@ import example.*;
 //Manages connections to the registry
 public class NetworkUtil {
 
-	//hardcoded stub generators 
-	public static StringReverse_stub getStringReverseStub(String id, InetSocketAddress objLocation){
-		
-		return new StringReverse_stub(id, objLocation);
-	}
-	
 	public static RemoteObj getRemoteObject(InetSocketAddress registryLocation, String name){
 		return registryLookup(registryLocation,name).localise(registryLocation);
 	}

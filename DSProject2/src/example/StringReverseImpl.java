@@ -1,7 +1,6 @@
 package example;
-import rmi_framework.RemoteObj;
 
-public class StringReverseImpl implements RemoteObj, StringReverse{
+public class StringReverseImpl implements StringReverse{
 
 	
 	private String appendage;
