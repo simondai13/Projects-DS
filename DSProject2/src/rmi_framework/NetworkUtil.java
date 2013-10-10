@@ -9,16 +9,14 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-
-import example.*;
-
-//Manages connections to the registry
+/*
+ * Static Utility Class used to communicate with the registry.  This class is used internally,
+ * and does not need to be used by a user
+ */
 public class NetworkUtil {
-
-	public static RemoteObj getRemoteObject(InetSocketAddress registryLocation, String name){
-		return registryLookup(registryLocation,name).localise(registryLocation);
-	}
 	
+	//Lookup a remote object at the given registry location, and return a remoteobjectRef if it is a 
+	//valid name, or null otherwise
 	public static RemoteObjectRef registryLookup(InetSocketAddress registryLocation, String name) {
 
 		RegistryRequest req = new RegistryRequest();
@@ -33,6 +31,7 @@ public class NetworkUtil {
 		return null;
 	}
 	
+	//Register remoteObject with the registry
 	public static boolean registryRegister(InetSocketAddress registryLocation, RemoteObjectRef obj){
 	
 		RegistryRequest req = new RegistryRequest();
@@ -46,6 +45,8 @@ public class NetworkUtil {
 		return false;
 	}
 	
+	//Remove the given name from the registry index, this remote object will no longer be able 
+	//to be located
 	public static boolean registryUnregister(InetSocketAddress registryLocation, String name){
 		
 		RegistryRequest req = new RegistryRequest();

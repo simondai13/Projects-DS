@@ -1,7 +1,7 @@
 package rmi_framework;
 import java.io.Serializable;
-import java.net.InetSocketAddress;
 
+//Simple message structure for replying to registry requests
 public class RegistryResponse implements Serializable {
 	private static final long serialVersionUID = 1L;
 	

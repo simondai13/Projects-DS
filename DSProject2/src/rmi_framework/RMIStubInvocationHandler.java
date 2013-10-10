@@ -12,6 +12,9 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+/*This class represents an abstracted stub.  It contains a single method, invoke,
+ * that will pass the invocation as an RMIMessage to the actual client
+ */
 public class RMIStubInvocationHandler implements InvocationHandler {
 
 	private InetSocketAddress registryLocation;
@@ -25,8 +28,15 @@ public class RMIStubInvocationHandler implements InvocationHandler {
 		this.name = name;
 	}
 	
+	/*This method is called whenever a interface that extends RemoteObject calls a method (on a stub).
+	*the details of the invocation are packaged into an RMIMessage and sent to the node that
+	*contains the actual instance, and invokes the method there.  The results are then recieved, and
+	*from the users perspective a local function has just been invoked.  Note this is also capable of 
+	*passing and throwing errors from the actual instance
+	*/
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+		//We do not need RMI to get the name, this prevents an infinite loop
 		if(method.getName().equals("getRMIName")){
 			return this.name;
 		}
@@ -44,6 +54,7 @@ public class RMIStubInvocationHandler implements InvocationHandler {
 		RMIMessage msg = new RMIMessage(RMIMessage.RMIMessageType.INVOKE, 
 										args, name, method.getName(), method.getParameterTypes());
 		
+		//Send the RMI message to the given location
 		RMIMessage response = null;
 		try {
 			Socket client = new Socket(objLocation.getAddress(), objLocation.getPort());
@@ -60,10 +71,8 @@ public class RMIStubInvocationHandler implements InvocationHandler {
 			
 			client.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		RMIMessage.RMIMessageType messageType = response.getMessageType();

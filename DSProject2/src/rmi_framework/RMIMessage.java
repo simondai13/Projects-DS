@@ -1,6 +1,9 @@
 package rmi_framework;
 import java.io.Serializable;
 
+/*This Class contains all the information for both currying a method invocation across the network,
+ * and returning the result
+ */
 public class RMIMessage implements Serializable{
 	private static final long serialVersionUID = 1L;
 
@@ -22,8 +25,8 @@ public class RMIMessage implements Serializable{
 	
 	
 	
-	public RMIMessage(RMIMessageType type, Object[] arguments, String ownerID, String methodName, Class[] paramTypes){
-		
+	public RMIMessage(RMIMessageType type, Object[] arguments, String ownerID, 
+						String methodName, Class<?>[] paramTypes){
 		this.type = type;
 		this.arguments = arguments;
 		this.ownerID = ownerID;

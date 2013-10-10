@@ -9,11 +9,12 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-
+/*An instance of this class is needed on each node that contains Objects that need referencing 
+ * across the system.  This alongside the RemoteObj interface are the only 2 classes needed by the user.  
+ */
 public class RMIHandler implements Runnable{
 
 	private ServerSocket server;
@@ -27,6 +28,16 @@ public class RMIHandler implements Runnable{
 		localHost=new InetSocketAddress(InetAddress.getLocalHost(),server.getLocalPort());
 		this.registry=registry;
 		localObjects = new HashMap<String, RemoteObj>();
+	}
+	
+	//Returns a remote object stub corresponding to the remote object at the given registry with name
+	//name (Static Function)
+	public static RemoteObj getRemoteObject(InetSocketAddress registryLocation, String name){
+		RemoteObjectRef r =  NetworkUtil.registryLookup(registryLocation,name);
+		if (r!=null)
+			return r.localise(registryLocation);
+		
+		return null;
 	}
 	
 	//Registers a remote object r on the registry as well as adding
@@ -43,8 +54,19 @@ public class RMIHandler implements Runnable{
 		return true;
 	}
 	
+	//Unregister the remote object that was registered with this RMIhandler.  If the name is not 
+	//registered locally or on the server, returns false.  Otherwise, returns true
+	public boolean unregisterObject(RemoteObj r)
+	{
+		if(!localObjects.containsKey(r.getRMIName()))
+			return false;
+		localObjects.remove(r.getRMIName());
+		return NetworkUtil.registryUnregister(registry, r.getRMIName());
+		
+	}
 	
-	//handles connections concurrently
+	
+	//Nested class to handle concurrent RMI requests
 	private class ConnectionHandler implements Runnable{
 
 		private Socket client;
@@ -53,6 +75,7 @@ public class RMIHandler implements Runnable{
 			client = s;
 		}
 		
+		//Handles a single request to an object registered on this RMI handler
 		@Override
 		public void run() {
 
@@ -136,6 +159,7 @@ public class RMIHandler implements Runnable{
 		}
 	}
 	
+	//Simply wait for connections, and process RMI requests
 	@Override
 	public void run() {
 

@@ -1,8 +1,8 @@
 package rmi_framework;
 import java.io.Serializable;
-import java.net.InetSocketAddress;
 
-
+//Message type used for sending register, lookup, and unregister requests to the registry
+//server
 public class RegistryRequest implements Serializable{
 	private static final long serialVersionUID = 1L;
 	

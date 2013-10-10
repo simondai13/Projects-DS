@@ -6,11 +6,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.TreeMap;
 
+//There should only be one RemoteObjectRegistry per RMI system.
+//The registry is responsible for providing a common source for all nodes
+//in the system
 public class RemoteObjectRegistry implements Runnable {
 	private ServerSocket server;
 	
@@ -50,6 +52,7 @@ public class RemoteObjectRegistry implements Runnable {
 				 }
 				 RegistryRequest req = (RegistryRequest) obj;
 				 RegistryResponse resp = new RegistryResponse();
+				 //Make sure only 1 client is modifying the registry at a given time
 				 synchronized (remoteObjects)
 				 {
 					 switch (req.type) {
