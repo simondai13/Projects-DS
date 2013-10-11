@@ -36,7 +36,7 @@ public class Main {
 		GlobalStringReverse globalReverser = (GlobalStringReverse)RMIHandler.getRemoteObject(regAddress, "globalStringReverse1");
 		
 		List<String> l = new ArrayList<String>();
-		l.add("Th");
+		l.add("This ");
 		l.add("IS A ");
 		l.add("Testing");
 		l.add("Mechanism");
@@ -44,6 +44,8 @@ public class Main {
 		
 		System.out.println(globalReverser.globalReverse(l, sr));
 
+		l.set(0, "TH");
+		System.out.println(globalReverser.globalReverse(l, sr));
 		System.out.println("DONE");
 	}
 }

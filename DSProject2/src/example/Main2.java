@@ -10,7 +10,6 @@ public class Main2 {
 
 	public static void main(String[] args) throws Exception{
 		
-
 		InetSocketAddress regAddress =  new InetSocketAddress(InetAddress.getLocalHost(), 5444);
 		//get stub for the StringReverse class run in the main class
 		StringReverse reverser = (StringReverse)RMIHandler.getRemoteObject(regAddress, "stringReverse1");
