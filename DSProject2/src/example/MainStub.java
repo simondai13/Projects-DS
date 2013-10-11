@@ -2,7 +2,6 @@ package example;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-import rmi_framework.NetworkUtil;
 import rmi_framework.RMIHandler;
 import rmi_framework.RemoteObjectRegistry;
 
@@ -18,7 +17,6 @@ public class MainStub {
 		//Create an RMI handler
 		InetSocketAddress regAddress = new InetSocketAddress(InetAddress.getLocalHost(), 5444);
 		RMIHandler rh = new RMIHandler(regAddress, 5445);
-		InetSocketAddress handler1Address = new InetSocketAddress(InetAddress.getLocalHost(), 5445);
 		Thread handlerThread = new Thread(rh);
 		handlerThread.start();
 		//Create a database and add stuff
@@ -32,7 +30,6 @@ public class MainStub {
 	
 		
 		RMIHandler rh2 = new RMIHandler(regAddress, 5446);
-		InetSocketAddress handler2Address = new InetSocketAddress(InetAddress.getLocalHost(), 5446);
 		Thread handler2Thread = new Thread(rh2);
 		handler2Thread.start();
 		//Create a second database and add stuff
@@ -55,6 +52,7 @@ public class MainStub {
 		System.out.println(" ");
 		d2Ref2.printContents();
 		System.out.println(" ");
+		d2Ref2.equals(d2Ref);
 		
 		//Try RMI with some arbitrary exception
 		try {
