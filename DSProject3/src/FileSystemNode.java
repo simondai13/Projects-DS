@@ -29,16 +29,24 @@ public class FileSystemNode {
 	public void write(String filename, String writeContent) throws FileNotFoundException{
 		
 		File f = localFiles.get(filename);
-		if(f == null)
+		File f2 = tempFiles.get(filename);
+		if(f == null && f2 == null)
 			throw new FileNotFoundException();
-		write(f, writeContent, f.length());
+		
+		if(f != null)
+			write(f, writeContent, f.length());
+		write(f2, writeContent, f2.length());
 	}
 	public void write(String filename, String writeContent, long writeLocation) throws FileNotFoundException{
-		
+
 		File f = localFiles.get(filename);
-		if(f == null)
+		File f2 = tempFiles.get(filename);
+		if(f == null && f2 == null)
 			throw new FileNotFoundException();
-		write(f, writeContent, writeLocation);
+		
+		if(f != null)
+			write(f, writeContent, writeLocation);
+		write(f2, writeContent, writeLocation);
 	}
 	private void write(File f, String writeContent, long writeLocation) throws FileNotFoundException{
 		
@@ -62,6 +70,16 @@ public class FileSystemNode {
 		boolean result = f.createNewFile();
 		if(result)
 			localFiles.put(filename, f);
+		
+		return result;
+	}
+	public boolean makeTempFile(String filename) throws IOException{
+
+		File f = new File(filename);
+		
+		boolean result = f.createNewFile();
+		if(result)
+			tempFiles.put(filename, f);
 		
 		return result;
 	}

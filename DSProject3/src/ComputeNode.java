@@ -60,4 +60,9 @@ public class ComputeNode implements Runnable{
 			 
 		}
 	}
+	
+	private File getFile(){
+		
+		return null;
+	}
 }
