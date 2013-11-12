@@ -7,25 +7,47 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 
 
 
 public class Master implements Runnable{
 	 
-	private TreeMap<Long,StatusUpdate.Type> jobs;
-	private TreeMap<InetAddress,Boolean> nodeStatus;
+	//private TreeMap<Long,StatusUpdate.Type> jobs;
+	//Map of node to currently executing tasks
+	//Keeps an array for parallel job execution
+	private TreeMap<InetSocketAddress,Task[]> jobs; 
+	private TreeMap<InetSocketAddress,Boolean> nodeStatus;
+	private TreeMap<String,InetSocketAddress[]> fileLocs;
+	private TreeSet<InetSocketAddress> activeNodes; //maintain a list of operable nodes
 	private long heartRate;
 	private long delay;
+	private int portNum;
+	private ServerSocket server;
+	private Scheduler scheduler;
 	
-	public Master(long heartbeatPeriod,long delay){
+	//heartbeatPeriod <<heartbeat on compute node
+	public Master(long heartbeatPeriod,long delay, int port) throws IOException{
+		server=new ServerSocket(port);
+		portNum=port;
+		
 		heartRate=2*heartbeatPeriod;
 		this.delay=delay;
+		
+		jobs=new TreeMap<InetSocketAddress,Task[]>();
+		nodeStatus= new TreeMap<InetSocketAddress,Boolean>();
+		fileLocs= new TreeMap<String,InetSocketAddress[]>();
+		activeNodes= new TreeSet<InetSocketAddress>();
+		
+		//instantiate the scheduler only once all nodes have been initiated
+		scheduler=null;
 	}
 	
 	private class WorkerCheck extends TimerTask {
@@ -33,18 +55,40 @@ public class Master implements Runnable{
 		@Override
 		public void run() {
 			synchronized(jobs) {
-				for (Entry<InetAddress,Boolean> entry : nodeStatus.entrySet())
-				{
-					if(!entry.getValue())
+				synchronized (activeNodes)
+				 {
+					for (Entry<InetSocketAddress,Boolean> entry : nodeStatus.entrySet())
 					{
-						handleFailure(entry.getKey());
+						if(!entry.getValue()  &&activeNodes.contains(entry.getValue()))
+						{
+							handleFailure(entry.getKey());
+							System.out.println("Lost connection to: " + entry.getKey().getAddress()+ "attempting recovery");
+						}
+						entry.setValue(false);
 					}
-					entry.setValue(false);
-					System.out.println("Lost connection to: " + entry.getKey().getHostAddress()+ "attempting recovery");
-				}
+				 }
 			}
 		}
 	}
+	
+	public void handleFailure(InetSocketAddress node){
+		 
+	}
+	
+	//Process a nodes status update and reacts accordingly
+	public void updateNodeStatus(StatusUpdate stat){
+			/*
+			switch(stat.type)
+			{
+				case: FAILED
+					
+					
+			}
+			*/
+	}
+	
+	//TODO add some abort function
+	public void abort(){}
 	
 	private class ConnectionHandle implements Runnable {
 		private Socket client;
@@ -63,20 +107,48 @@ public class Master implements Runnable{
 				 Object obj = objIn.readObject();
 				 
 				 //Make sure this message is packed properly
-				 if(!StatusUpdate.class.isAssignableFrom(obj.getClass())){
-					 return;
-				 }
-				 StatusUpdate stat = (StatusUpdate) obj;
-				 synchronized (jobs)
+				 if(StatusUpdate.class.isAssignableFrom(obj.getClass()))
 				 {
-					 switch(stat.type) {
-						 case HEARTBEAT: 
-					 		nodeStatus.put(client.getInetAddress(),true);
-					 		break;
-						 default:
-							 jobs.put(stat.PID,stat.type);
+			
+					 StatusUpdate stat = (StatusUpdate) obj;
+					 synchronized (jobs)
+					 {
+						 switch(stat.type) {
+						 	case HEARTBEAT: 
+						 		nodeStatus.put(stat.node,true);
+						 		break;
+						 	default:
+						 		updateNodeStatus(stat);
+						 }
 					 }
 				 }
+				 else if(FileLocationRequest.class.isAssignableFrom(obj.getClass()))
+				 {
+					 OutputStream out = client.getOutputStream();
+					 ObjectOutput objOut = new ObjectOutputStream(out);
+					 
+					 //Send the first valid node address with this data
+					 //If the node fails when the worker tries to contact it, the worker
+					 //then has to send the master another request
+					 FileLocationRequest req = (FileLocationRequest) obj;
+					 InetSocketAddress[] locs = fileLocs.get(req.filename);
+					 
+					 boolean locFound=false;
+					 for(int i=0; i<=locs.length; i++){
+						 synchronized (activeNodes)
+						 {
+							 if(activeNodes.contains(locs[i])){
+								 objOut.writeObject(locs[i]);
+								 locFound=true;
+							 }
+						 }
+					 }
+					 
+					 if(!locFound){
+						 System.out.println("CRITICAL ERROR: ALL INSTANCES OF " + req.filename + "MISSING");
+						 abort();
+					 }
+				}
 				 
 			 } catch (ClassNotFoundException e) {
 				 System.out.println("Invalid Process Request");

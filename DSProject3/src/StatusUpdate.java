@@ -1,4 +1,5 @@
 import java.io.Serializable;
+import java.net.InetSocketAddress;
 
 
 public class StatusUpdate implements Serializable {
@@ -7,5 +8,6 @@ public class StatusUpdate implements Serializable {
 	public enum Type {
 		HEARTBEAT, TERMINATED, FAILED 
 	}
+	public InetSocketAddress node;
 	public Type type;
 }

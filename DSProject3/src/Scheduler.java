@@ -1,5 +1,6 @@
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 import java.util.TreeMap;
@@ -10,8 +11,9 @@ public class Scheduler {
 	private TreeMap<String,InetSocketAddress[]> fileLocs;
 	private String[] mapFiles;
 	private InetSocketAddress[] workNodes;
-    private TreeMap<String,InetSocketAddress> mapAddress;
-    private Stack<String> workQueue;
+    private TreeMap<Task,InetSocketAddress> initialTasks;
+    private List<Task> mapTasks;
+    private List<Task> reduceTasks;
 	
 	private int PID_Index;
 	public Scheduler(String[] mapFiles, InetSocketAddress[] workNodes, TreeMap<String,InetSocketAddress[]> fileLocs){
@@ -19,12 +21,52 @@ public class Scheduler {
 		this.mapFiles=mapFiles;
 		this.workNodes=workNodes;
 		this.fileLocs=fileLocs;
-		workQueue = new Stack<String>();
-		mapAddress = new TreeMap<String,InetSocketAddress>();
+		mapTasks = new ArrayList<Task>();
+		reduceTasks = new ArrayList<Task>();
+		initialTasks = new TreeMap<Task,InetSocketAddress>();
 		//setup an initial schedule
 		bipartiteMatch();
-		System.out.println(mapAddress.toString());
+		System.out.println(initialTasks.toString());
 	} 
+	
+	public TreeMap<Task,InetSocketAddress> getInitialTasks(){
+		return initialTasks;
+	}
+	
+	public Task getNextTask(InetSocketAddress node){
+		if(!mapTasks.isEmpty()){
+			for(int i=0; i<mapTasks.size(); i++){
+				InetSocketAddress[] locs =fileLocs.get(mapTasks.get(i));
+				for(int j=0; i<locs.length; j++){
+					if(node.equals(locs[i])){
+						Task result= mapTasks.get(i);
+						mapTasks.remove(i);
+						return result;
+						
+					}
+				}
+			}
+		
+			Task result= mapTasks.get(0);
+			mapTasks.remove(0);
+			return result;
+		}
+		else if(!reduceTasks.isEmpty()){
+			Task result= reduceTasks.get(0);
+			reduceTasks.remove(0);
+			return result;
+		}
+		
+		return null;
+	}
+	
+	public void addTask(Task t){
+		/*if()
+		{
+			reduceTasks.add(t);
+		}
+		*/
+	}
 	
 	
 	//This scheduler uses an adaptation of the augmenting paths algorithm.
@@ -59,7 +101,8 @@ public class Scheduler {
 
 	    for(int i=0; i<M.length; i++){
 	    	if(M[i]!=-1){
-	    		mapAddress.put(mapFiles[M[i]], workNodes[i]);
+	    		initialTasks.put(new Task(PID_Index,Task.Type.MAP,mapFiles[M[i]]), workNodes[i]);
+	    		PID_Index++;
 	    		taskedMaps[M[i]]=true;
 	    	}
 	    }
@@ -69,7 +112,8 @@ public class Scheduler {
 	    for(int i=0; i<taskedMaps.length; i++)
 	    {
 	    	if(!taskedMaps[i]){
-	    		workQueue.push(mapFiles[i]);
+	    		mapTasks.add(new Task(PID_Index,Task.Type.MAP,mapFiles[i]));
+	    		PID_Index++;
 	    	}
 	    }
 	    
