@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -26,29 +27,43 @@ public class SystemNode implements Runnable{
 		@Override
 		public void run() {
 			
+			PrintWriter out = null;
+			BufferedReader in = null;
+			String line = null;
+			
 			try{ 
-				InputStream in = client.getInputStream();
+				out = new PrintWriter(client.getOutputStream());
+				in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+				line = in.readLine();
 
-				BufferedReader br = new BufferedReader(new InputStreamReader(in));
-				String line = br.readLine();
+			 } catch (IOException e) {
+			 }
 				
+			try{
+				if(line == null)
+					out.write("FAIL");
 				//starts the appropriate type of node
-				if(line.contains("MASTER")){
-					
-					int portnum = br.read();
+				else if(line.contains("MASTER")){
+						
+					int portnum = Integer.parseInt(in.readLine());
+					long heartbeat = Long.parseLong(in.readLine());
+					long delay = Long.parseLong(in.readLine());
 					Master m= null;//new Master(portnum);
 					Thread t = new Thread(m);
 					t.start();
 				}
 				else if(line.contains("COMPUTE")){
 				
-					int portnum = br.read();
+					int portnum = Integer.parseInt(in.readLine());
 					ComputeNode compute = new ComputeNode(portnum);
 					Thread t = new Thread(compute);
 					t.start();
+					out.write("OK");
 				}
-			 } catch (IOException e) {
-			 }
+			}catch(IOException e){
+				
+				out.write("FAIL");
+			}
 			
 		}
 	}

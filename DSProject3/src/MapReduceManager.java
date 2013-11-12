@@ -3,7 +3,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,11 +22,14 @@ public class MapReduceManager {
 	public void configMapReduce(File configFile){
 		
 		BufferedReader br = null;
-		int maxmaps=1;
+		double maxmaps=1;
 		int numPartitions=1;
 		int replicationFactor=1;
+		long heartbeat=10000;
+		long delay = 1000;
+		List<InetSocketAddress> participants = new ArrayList<InetSocketAddress>();
 		Map<InetSocketAddress, Integer> participantLocations = new TreeMap<InetSocketAddress, Integer>();
-		InetSocketAddress masterLocation;
+		InetSocketAddress masterLocation=null;
 		int masterNodePort=0;
 		List<File> dataFiles = new ArrayList<File>();
 		
@@ -51,13 +60,12 @@ public class MapReduceManager {
 					line = br.readLine();
 					port = Integer.parseInt(line.substring(line.indexOf('=')+1));
 					line = br.readLine();
-					participantLocations.put(new InetSocketAddress(address,  port),Integer.parseInt(line.substring(line.indexOf('=')+1)));
+					InetSocketAddress adr = new InetSocketAddress(address,  port);
+					participants.add(adr);
+					participantLocations.put(adr,Integer.parseInt(line.substring(line.indexOf('=')+1)));
 					break;
 				case "MAXMAPS":
-					maxmaps = Integer.parseInt(paramValue);
-					break;
-				case "MAXPARTITIONS":
-					numPartitions = Integer.parseInt(paramValue);
+					maxmaps = Double.parseDouble(paramValue);
 					break;
 				case "DATAFILE":
 					String fname = paramValue;
@@ -66,6 +74,14 @@ public class MapReduceManager {
 				case "REPLICATION":
 					replicationFactor = Integer.parseInt(paramValue);
 					break;
+				case "HEARBEAT":
+					heartbeat= Long.parseLong(paramValue);
+					break;
+				case "DELAY":
+					delay = Long.parseLong(paramValue);
+					break;
+					
+					
 				}
 			}
 			
@@ -76,11 +92,80 @@ public class MapReduceManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
-	
-	
-	public void bootstrap(){
+
+		int numHosts = participantLocations.size();
+		int numFiles = dataFiles.size();
 		
-	
+		//creates ComputeNodes
+		for(InetSocketAddress p : participantLocations.keySet()){
+			
+			try {
+				
+				Socket client = new Socket(p.getAddress(), p.getPort());
+				String message = "COMPUTE\n"+participantLocations.get(p)+"\n";
+				PrintWriter out = new PrintWriter(client.getOutputStream());
+				BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+				out.write(message);
+				String response = in.readLine();
+				client.close();
+				if(response == null || response.equals("FAIL"))
+					throw new IOException();
+			} catch (IOException e) {
+
+				numHosts--;
+				participantLocations.remove(p);
+				participants.remove(p);
+				System.out.println("Participant " + p.toString() + " unavailable, will be removed from system");
+				e.printStackTrace();
+			}
+		}
+
+		//set up master
+		if(masterLocation == null)
+			System.out.println("No Master node provided");
+		
+		try {
+			
+			Socket client = new Socket(masterLocation.getAddress(), masterLocation.getPort());
+			String message = "MASTER\n"+masterNodePort+"\n"+heartbeat+"\n"+delay+"\n";
+			PrintWriter out = new PrintWriter(client.getOutputStream());
+			BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+			out.write(message);
+			out.close();
+			String response = in.readLine();
+			in.close();
+			client.close();
+			if(response == null || response.equals("FAIL"))
+				throw new IOException();
+		} catch (IOException e) {
+			System.out.println("Master Setup Failed");
+		}
+		
+		
+		//give ComputeNodes their files, also tell master where they are
+		for(int i = 0; i < numFiles; i++){
+
+			File f = dataFiles.get(i);
+			try {
+				int numLines = 0;
+				BufferedReader lineCount = new BufferedReader(new FileReader(f));
+				while(lineCount.readLine() != null){
+					numLines++;
+				}
+				
+				BufferedReader readFile = new BufferedReader(new FileReader(f));
+				
+				
+				
+			} catch (FileNotFoundException e) {
+
+				System.out.println("File " + f.getName() + " not found");
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
+	
 }

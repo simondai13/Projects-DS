@@ -17,8 +17,8 @@ public class ComputeNode implements Runnable{
 	
 	public ComputeNode(int portnum) throws IOException{
 		
-		
 		server = new ServerSocket(portnum);
+		fileSystem = new FileSystemNode();
 	}
 
 
