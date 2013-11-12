@@ -61,11 +61,13 @@ public class Scheduler {
 	}
 	
 	public void addTask(Task t){
-		/*if()
+		if(t.type==Task.Type.REDUCE)
 		{
 			reduceTasks.add(t);
+		}else
+		{
+			mapTasks.add(t);
 		}
-		*/
 	}
 	
 	
