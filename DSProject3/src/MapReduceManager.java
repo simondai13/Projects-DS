@@ -27,6 +27,7 @@ public class MapReduceManager {
 		long delay = 1000;
 		List<InetSocketAddress> participants = new ArrayList<InetSocketAddress>();
 		Map<InetSocketAddress, Integer> participantLocations = new TreeMap<InetSocketAddress, Integer>();
+		Map<InetSocketAddress, Integer> participantFileLocations = new TreeMap<InetSocketAddress, Integer>();
 		InetSocketAddress masterLocation=null;
 		int masterNodePort=0;
 		List<File> dataFiles = new ArrayList<File>();
@@ -61,6 +62,9 @@ public class MapReduceManager {
 					InetSocketAddress adr = new InetSocketAddress(address,  port);
 					participants.add(adr);
 					participantLocations.put(adr,Integer.parseInt(line.substring(line.indexOf('=')+1)));
+					line = br.readLine();
+					participantFileLocations.put(adr,Integer.parseInt(line.substring(line.indexOf('=')+1)));
+					
 					break;
 				case "MAXMAPS":
 					maxmaps = Double.parseDouble(paramValue);
@@ -97,30 +101,6 @@ public class MapReduceManager {
 		if(fileSplit == -1)
 			fileSplit = numHosts;
 		int numFiles = dataFiles.size();
-		
-		//creates ComputeNodes
-		for(InetSocketAddress p : participantLocations.keySet()){
-			
-			try {
-				
-				Socket client = new Socket(p.getAddress(), p.getPort());
-				String message = "COMPUTE\n"+participantLocations.get(p)+"\n";
-				PrintWriter out = new PrintWriter(client.getOutputStream());
-				BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-				out.println(message);
-				String response = in.readLine();
-				client.close();
-				if(response == null || response.equals("FAIL"))
-					throw new IOException();
-			} catch (IOException e) {
-
-				numHosts--;
-				participantLocations.remove(p);
-				participants.remove(p);
-				System.out.println("Participant " + p.toString() + " unavailable, will be removed from system");
-				e.printStackTrace();
-			}
-		}
 
 		//set up master
 		if(masterLocation == null)
@@ -143,7 +123,30 @@ public class MapReduceManager {
 			System.out.println("Master Setup Failed");
 		}
 		
-		
+		//creates ComputeNodes
+		for(InetSocketAddress p : participantLocations.keySet()){
+			
+			try {
+				
+				Socket client = new Socket(p.getAddress(), p.getPort());
+				String message = "COMPUTE\n"+participantLocations.get(p)+"\n"+participantFileLocations.get(p)+"\n"+
+								masterLocation.getHostName()+"\n"+masterLocation.getPort()+"\n";
+				PrintWriter out = new PrintWriter(client.getOutputStream());
+				BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+				out.println(message);
+				String response = in.readLine();
+				client.close();
+				if(response == null || response.equals("FAIL"))
+					throw new IOException();
+			} catch (IOException e) {
+
+				numHosts--;
+				participantLocations.remove(p);
+				participants.remove(p);
+				System.out.println("Participant " + p.toString() + " unavailable, will be removed from system");
+				e.printStackTrace();
+			}
+		}
 		//give ComputeNodes their files, also tell master where they are
 		for(int i = 0; i < numFiles; i++){
 
@@ -166,7 +169,7 @@ public class MapReduceManager {
 						
 						InetSocketAddress p = participants.get((k+j) % numHosts);
 						fileCopies.add(p);
-						fileRecipients[k] = (new Socket(p.getHostName(), participantLocations.get(p)));
+						fileRecipients[k] = (new Socket(p.getHostName(), participantFileLocations.get(p)));
 						outStreams[k] = new PrintWriter(fileRecipients[k].getOutputStream());
 					}
 					
@@ -174,7 +177,7 @@ public class MapReduceManager {
 					String fname = f.getName();
 					fileCopies = null;
 					
-					
+					//write file out to given nodes
 					for(int k = 0; k < numLines/fileSplit; k++){
 						
 						String line = readFile.readLine();
@@ -182,13 +185,10 @@ public class MapReduceManager {
 							
 							outStreams[l].println(line);
 						}
-					}
-					
-					for(int k = 0; k < replicationFactor; k++){
-						
 						outStreams[k].close();
 						fileRecipients[k].close();
 					}
+					
 				}
 				readFile.close();
 				

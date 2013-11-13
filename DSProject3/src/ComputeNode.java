@@ -24,7 +24,6 @@ public class ComputeNode implements Runnable{
 	private ServerSocket server;
 	private MapReducer mapRed;
 	
-	
 	public ComputeNode(int portnum, MapReducer mapRed) throws IOException{
 		
 		server = new ServerSocket(portnum);
