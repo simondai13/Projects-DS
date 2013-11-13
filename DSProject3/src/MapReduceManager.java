@@ -175,6 +175,8 @@ public class MapReduceManager {
 						fileCopies.add(p);
 						fileRecipients[k] = (new Socket(p.getHostName(), participantFileLocations.get(p)));
 						outStreams[k] = new PrintWriter(fileRecipients[k].getOutputStream());	
+						outStreams[k].println("FILESEND");	
+						outStreams[k].println(fileID);
 						message+=p.getHostName()+"\n";
 						message+=p.getPort()+"\n";
 					}
