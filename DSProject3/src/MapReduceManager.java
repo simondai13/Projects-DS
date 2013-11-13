@@ -160,11 +160,15 @@ public class MapReduceManager {
 				//for the j-th segment of the file
 				for(int j = 0; j < fileSplit; j++){
 					
+					String startRecord = j*(numLines/fileSplit)+"%"; 
+					String endRecord = (j+1)*(numLines/fileSplit)+"%";
+					
+					String fileID = startRecord+endRecord+fname;
 					Socket[] fileRecipients = new Socket[replicationFactor];
 					PrintWriter[] outStreams = new PrintWriter[replicationFactor];
 					List<InetSocketAddress> fileCopies = new ArrayList<InetSocketAddress>();
 					//for each replicating node
-					String message = "NEWFILE\n"+fname+"\n";
+					String message = "NEWFILE\n"+fileID+"\n";
 					for(int k = 0; k < replicationFactor; k++){
 						
 						InetSocketAddress p = participants.get((k+j) % numHosts);
@@ -182,14 +186,27 @@ public class MapReduceManager {
 					master.close();
 					
 					//write file out to given nodes
-					//for the k-th line of the file
-					for(int k = 0; k < numLines/fileSplit; k++){
-						
-						String line = readFile.readLine();
-						//for each replicating node
-						for(int l = 0; l < replicationFactor; l++){
+					//make the last segment copy the rest of the file
+					if(j != (fileSplit - 1)){
+						for(int k = 0; k < numLines/fileSplit; k++){
 							
-							outStreams[l].println(line);
+							String line = readFile.readLine();
+							//for each replicating node
+							for(int l = 0; l < replicationFactor; l++){
+								
+								outStreams[l].println(line);
+							}
+						}
+					}
+					else{
+						String line = "";
+						while((line = readFile.readLine())!=null){
+							
+							//for each replicating node
+							for(int l = 0; l < replicationFactor; l++){
+								
+								outStreams[l].println(line);
+							}
 						}
 					}
 					
