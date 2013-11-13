@@ -41,7 +41,7 @@ public class SystemNode implements Runnable{
 				
 			try{
 				if(line == null)
-					out.write("FAIL");
+					out.println("FAIL");
 				//starts the appropriate type of node
 				else if(line.contains("MASTER")){
 						
@@ -58,11 +58,11 @@ public class SystemNode implements Runnable{
 					ComputeNode compute = new ComputeNode(portnum);
 					Thread t = new Thread(compute);
 					t.start();
-					out.write("OK");
+					out.println("OK");
 				}
 			}catch(IOException e){
 				
-				out.write("FAIL");
+				out.println("FAIL");
 			}
 			
 		}

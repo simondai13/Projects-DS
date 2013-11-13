@@ -3,11 +3,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -25,6 +22,7 @@ public class MapReduceManager {
 		double maxmaps=1;
 		int numPartitions=1;
 		int replicationFactor=1;
+		int fileSplit = -1;
 		long heartbeat=10000;
 		long delay = 1000;
 		List<InetSocketAddress> participants = new ArrayList<InetSocketAddress>();
@@ -80,7 +78,9 @@ public class MapReduceManager {
 				case "DELAY":
 					delay = Long.parseLong(paramValue);
 					break;
-					
+				case "FILESPLIT":
+					fileSplit = Integer.parseInt(paramValue);
+					break;
 					
 				}
 			}
@@ -94,6 +94,8 @@ public class MapReduceManager {
 		}
 
 		int numHosts = participantLocations.size();
+		if(fileSplit == -1)
+			fileSplit = numHosts;
 		int numFiles = dataFiles.size();
 		
 		//creates ComputeNodes
@@ -105,7 +107,7 @@ public class MapReduceManager {
 				String message = "COMPUTE\n"+participantLocations.get(p)+"\n";
 				PrintWriter out = new PrintWriter(client.getOutputStream());
 				BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-				out.write(message);
+				out.println(message);
 				String response = in.readLine();
 				client.close();
 				if(response == null || response.equals("FAIL"))
@@ -130,7 +132,7 @@ public class MapReduceManager {
 			String message = "MASTER\n"+masterNodePort+"\n"+heartbeat+"\n"+delay+"\n";
 			PrintWriter out = new PrintWriter(client.getOutputStream());
 			BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-			out.write(message);
+			out.println(message);
 			out.close();
 			String response = in.readLine();
 			in.close();
@@ -152,10 +154,43 @@ public class MapReduceManager {
 				while(lineCount.readLine() != null){
 					numLines++;
 				}
-				
+				lineCount.close();
 				BufferedReader readFile = new BufferedReader(new FileReader(f));
 				
-				
+				for(int j = 0; j < fileSplit; j++){
+					
+					Socket[] fileRecipients = new Socket[replicationFactor];
+					PrintWriter[] outStreams = new PrintWriter[replicationFactor];
+					List<InetSocketAddress> fileCopies = new ArrayList<InetSocketAddress>();
+					for(int k = 0; k < replicationFactor; k++){
+						
+						InetSocketAddress p = participants.get((k+j) % numHosts);
+						fileCopies.add(p);
+						fileRecipients[k] = (new Socket(p.getHostName(), participantLocations.get(p)));
+						outStreams[k] = new PrintWriter(fileRecipients[k].getOutputStream());
+					}
+					
+					//tell master who has part j of the file
+					String fname = f.getName();
+					fileCopies = null;
+					
+					
+					for(int k = 0; k < numLines/fileSplit; k++){
+						
+						String line = readFile.readLine();
+						for(int l = 0; l < replicationFactor; l++){
+							
+							outStreams[l].println(line);
+						}
+					}
+					
+					for(int k = 0; k < replicationFactor; k++){
+						
+						outStreams[k].close();
+						fileRecipients[k].close();
+					}
+				}
+				readFile.close();
 				
 			} catch (FileNotFoundException e) {
 
