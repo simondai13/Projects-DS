@@ -19,8 +19,6 @@ public class MapReduceManager {
 	public void configMapReduce(File configFile){
 		
 		BufferedReader br = null;
-		double maxmaps=1;
-		int numPartitions=1;
 		int replicationFactor=1;
 		int fileSplit = -1;
 		long heartbeat=10000;
@@ -30,6 +28,7 @@ public class MapReduceManager {
 		Map<InetSocketAddress, Integer> participantFileLocations = new TreeMap<InetSocketAddress, Integer>();
 		InetSocketAddress masterLocation=null;
 		int masterNodePort=0;
+		int masterDFSPort = 0;
 		List<File> dataFiles = new ArrayList<File>();
 		
 		try {
@@ -51,6 +50,8 @@ public class MapReduceManager {
 					port = Integer.parseInt(line.substring(line.indexOf('=')+1));
 					line = br.readLine();
 					masterNodePort = Integer.parseInt(line.substring(line.indexOf('=')+1));
+					line = br.readLine();
+					masterDFSPort = Integer.parseInt(line.substring(line.indexOf('=')+1));
 					masterLocation = new InetSocketAddress(address, port);
 					
 					break;
@@ -66,9 +67,6 @@ public class MapReduceManager {
 					participantFileLocations.put(adr,Integer.parseInt(line.substring(line.indexOf('=')+1)));
 					
 					break;
-				case "MAXMAPS":
-					maxmaps = Double.parseDouble(paramValue);
-					break;
 				case "DATAFILE":
 					String fname = paramValue;
 					dataFiles.add(new File(fname));
@@ -82,7 +80,7 @@ public class MapReduceManager {
 				case "DELAY":
 					delay = Long.parseLong(paramValue);
 					break;
-				case "FILESPLIT":
+				case "MAXFILESPLIT":
 					fileSplit = Integer.parseInt(paramValue);
 					break;
 					
@@ -90,10 +88,8 @@ public class MapReduceManager {
 			}
 			
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -130,7 +126,7 @@ public class MapReduceManager {
 				
 				Socket client = new Socket(p.getAddress(), p.getPort());
 				String message = "COMPUTE\n"+participantLocations.get(p)+"\n"+participantFileLocations.get(p)+"\n"+
-								masterLocation.getHostName()+"\n"+masterLocation.getPort()+"\n";
+								masterLocation.getHostName()+"\n"+masterLocation.getPort()+"\n"+masterDFSPort+"\n";
 				PrintWriter out = new PrintWriter(client.getOutputStream());
 				BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 				out.println(message);
@@ -159,32 +155,46 @@ public class MapReduceManager {
 				}
 				lineCount.close();
 				BufferedReader readFile = new BufferedReader(new FileReader(f));
-				
+
+				String fname = f.getName();
+				//for the j-th segment of the file
 				for(int j = 0; j < fileSplit; j++){
 					
 					Socket[] fileRecipients = new Socket[replicationFactor];
 					PrintWriter[] outStreams = new PrintWriter[replicationFactor];
 					List<InetSocketAddress> fileCopies = new ArrayList<InetSocketAddress>();
+					//for each replicating node
+					String message = "NEWFILE\n"+fname+"\n";
 					for(int k = 0; k < replicationFactor; k++){
 						
 						InetSocketAddress p = participants.get((k+j) % numHosts);
 						fileCopies.add(p);
 						fileRecipients[k] = (new Socket(p.getHostName(), participantFileLocations.get(p)));
-						outStreams[k] = new PrintWriter(fileRecipients[k].getOutputStream());
+						outStreams[k] = new PrintWriter(fileRecipients[k].getOutputStream());	
+						message+=p.getHostName()+"\n";
+						message+=p.getPort()+"\n";
 					}
-					
-					//tell master who has part j of the file
-					String fname = f.getName();
-					fileCopies = null;
+					//tell master who has this file
+					Socket master = new Socket(masterLocation.getAddress(), masterLocation.getPort());
+					PrintWriter out = new PrintWriter(master.getOutputStream());
+					out.print(message);
+					out.close();
+					master.close();
 					
 					//write file out to given nodes
+					//for the k-th line of the file
 					for(int k = 0; k < numLines/fileSplit; k++){
 						
 						String line = readFile.readLine();
+						//for each replicating node
 						for(int l = 0; l < replicationFactor; l++){
 							
 							outStreams[l].println(line);
 						}
+					}
+					
+					for(int k = 0; k < replicationFactor; k++){
+						
 						outStreams[k].close();
 						fileRecipients[k].close();
 					}

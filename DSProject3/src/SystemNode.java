@@ -59,7 +59,8 @@ public class SystemNode implements Runnable{
 					int filePortnum = Integer.parseInt(in.readLine());
 					InetAddress masterAdr = InetAddress.getByName(in.readLine());
 					int masterPort = Integer.parseInt(in.readLine());
-					ComputeNode compute = new ComputeNode(portnum, filePortnum, masterAdr, masterPort);
+					int masterDFSPort = Integer.parseInt(in.readLine());
+					ComputeNode compute = new ComputeNode(portnum, filePortnum, masterAdr, masterPort, masterDFSPort);
 					Thread t = new Thread(compute);
 					t.start();
 					out.println("OK");
