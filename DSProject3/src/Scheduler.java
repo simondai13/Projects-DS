@@ -1,14 +1,11 @@
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 
 public class Scheduler {
-	private TreeMap<String,InetSocketAddress[]> fileLocs;
+	private TreeMap<String,ArrayList<InetSocketAddress>> fileLocs;
 	private String[] mapFiles;
 	private InetSocketAddress[] workNodes;
     private TreeMap<Task,InetSocketAddress> initialTasks;
@@ -16,7 +13,7 @@ public class Scheduler {
     private List<Task> reduceTasks;
 	
 	private int PID_Index;
-	public Scheduler(String[] mapFiles, InetSocketAddress[] workNodes, TreeMap<String,InetSocketAddress[]> fileLocs){
+	public Scheduler(String[] mapFiles, InetSocketAddress[] workNodes, TreeMap<String,ArrayList<InetSocketAddress>> fileLocs){
 		PID_Index=0;
 		this.mapFiles=mapFiles;
 		this.workNodes=workNodes;
@@ -25,7 +22,9 @@ public class Scheduler {
 		reduceTasks = new ArrayList<Task>();
 		initialTasks = new TreeMap<Task,InetSocketAddress>();
 		//setup an initial schedule
-		bipartiteMatch();
+		synchronized(fileLocs){
+			bipartiteMatch();
+		}
 		//Simply add a reduce task for each file
 		for(int i=0; i<mapFiles.length; i++){
 			reduceTasks.add(new Task(PID_Index,Task.Type.REDUCE,mapFiles[i]));
@@ -40,18 +39,19 @@ public class Scheduler {
 	
 	public Task getNextTask(InetSocketAddress node){
 		if(!mapTasks.isEmpty()){
-			for(int i=0; i<mapTasks.size(); i++){
-				InetSocketAddress[] locs =fileLocs.get(mapTasks.get(i));
-				for(int j=0; i<locs.length; j++){
-					if(node.equals(locs[i])){
-						Task result= mapTasks.get(i);
-						mapTasks.remove(i);
-						return result;
-						
+			synchronized(fileLocs){
+				for(int i=0; i<mapTasks.size(); i++){
+					ArrayList<InetSocketAddress> locs =fileLocs.get(mapTasks.get(i));
+					for(int j=0; i<locs.size(); j++){
+						if(node.equals(locs.get(i))){
+							Task result= mapTasks.get(i);
+							mapTasks.remove(i);
+							return result;
+							
+						}
 					}
 				}
 			}
-		
 			Task result= mapTasks.get(0);
 			mapTasks.remove(0);
 			return result;
@@ -156,12 +156,12 @@ public class Scheduler {
 	//Helper function to find if there is an edge between 
 	//file and address (ie the file is at the address)
 	private boolean isEdge(String file, InetSocketAddress addr){
-		InetSocketAddress[] locs=fileLocs.get(file);
+		ArrayList<InetSocketAddress> locs=fileLocs.get(file);
 		if(locs == null)
 			return false;
 		
-		for(int i=0; i<locs.length; i++){
-			if(locs[i].equals(addr))
+		for(int i=0; i<locs.size(); i++){
+			if(locs.get(i).equals(addr))
 				return true;
 		}
 		

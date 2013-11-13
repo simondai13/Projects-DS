@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -25,7 +26,7 @@ public class Master implements Runnable{
 	//Keeps an array for parallel job execution
 	private TreeMap<InetSocketAddress,Task[]> jobs; 
 	private TreeMap<InetSocketAddress,Boolean> nodeStatus;
-	private TreeMap<String,InetSocketAddress[]> fileLocs;
+	private TreeMap<String,ArrayList<InetSocketAddress>> fileLocs;
 	private TreeSet<InetSocketAddress> activeNodes; //maintain a list of operable nodes
 	private long heartRate;
 	private long delay;
@@ -43,20 +44,49 @@ public class Master implements Runnable{
 		
 		jobs=new TreeMap<InetSocketAddress,Task[]>();
 		nodeStatus= new TreeMap<InetSocketAddress,Boolean>();
-		fileLocs= new TreeMap<String,InetSocketAddress[]>();
+		fileLocs= new TreeMap<String,ArrayList<InetSocketAddress>>();
 		activeNodes= new TreeSet<InetSocketAddress>();
 		
 		//instantiate the scheduler only once all nodes have been initiated
 		scheduler=null;
 	}
 	
+	private void startMapReduce(String[] files){
+		//Send in the full node array, not just the working ones, the master will
+		//sort out failed nodes
+		InetSocketAddress[] nodes = (InetSocketAddress[]) nodeStatus.keySet().toArray();
+		
+		scheduler = new Scheduler(files, nodes, fileLocs);
+		TreeMap<Task,InetSocketAddress> tasks = scheduler.getInitialTasks();
+		
+		for(Entry<Task,InetSocketAddress> e :tasks.entrySet())
+		{
+			sendTask(e.getKey(),e.getValue());
+		}
+	}
+	
 	private void addNode(InetSocketAddress node){
 		synchronized (activeNodes)
 		 {
 			activeNodes.add(node);
-		
+			nodeStatus.put(node, true);		
 		 }
 	}
+	
+	private void addFileReplica(InetSocketAddress dest, String file){
+		synchronized(fileLocs)
+		{
+			if(fileLocs.containsKey(file)){
+				fileLocs.get(file).add(dest);
+			}
+			else{
+				ArrayList<InetSocketAddress> locs= new ArrayList<InetSocketAddress>();
+				locs.add(dest);
+				fileLocs.put(file, locs);
+			}
+		}
+	}
+	
 	
 	private class WorkerCheck extends TimerTask {
 		//Checks at a fixed interval if the running 
@@ -159,6 +189,17 @@ public class Master implements Runnable{
 						 		updateNodeStatus(stat);
 						 }
 					 }
+				 } else if(MasterControlMsg.class.isAssignableFrom(obj.getClass()))
+				 {
+					 MasterControlMsg msg = (MasterControlMsg) obj;
+					 switch(msg.type) {
+					 	case START:
+					 		startMapReduce(msg.files);
+					 		break;
+					 	default:
+					 		break;
+						 
+					 }
 				 }
 				 else if(FileLocationRequest.class.isAssignableFrom(obj.getClass()))
 				 {
@@ -169,23 +210,44 @@ public class Master implements Runnable{
 					 //If the node fails when the worker tries to contact it, the worker
 					 //then has to send the master another request
 					 FileLocationRequest req = (FileLocationRequest) obj;
-					 InetSocketAddress[] locs = fileLocs.get(req.filename);
-					 
-					 boolean locFound=false;
-					 for(int i=0; i<=locs.length; i++){
-						 synchronized (activeNodes)
-						 {
-							 if(activeNodes.contains(locs[i])){
-								 objOut.writeObject(locs[i]);
-								 locFound=true;
+					 switch(req.type) {
+					 	case ADD:
+					 		//TODO add some locations of where we should duplicate this file
+					 		InetSocketAddress[] repLocations= new InetSocketAddress[1];
+					 		repLocations[0]=req.nodes[0];
+					 		FileLocationRequest resp=new FileLocationRequest();
+					 		resp.nodes=repLocations;
+					 		resp.type=FileLocationRequest.Type.ADD;
+					 		objOut.writeObject(resp);
+					 		break;
+					 	case LOC:
+					 		InetSocketAddress loc=null;
+							 ArrayList<InetSocketAddress> locs;
+							 synchronized(fileLocs){
+								 locs = fileLocs.get(req.filename);
 							 }
-						 }
+							 
+							 for(int i=0; i<=locs.size(); i++){
+								 synchronized (activeNodes)
+								 {
+									 if(activeNodes.contains(locs.get(i))){
+										 loc=locs.get(i);
+									 }
+								 }
+							 }
+							 
+							 if(loc!=null){
+								 objOut.writeObject(loc);
+							 }
+							 else{
+								 System.out.println("CRITICAL ERROR: ALL INSTANCES OF " + req.filename + "MISSING");
+								 abort();
+							 }
+							 break;
+					 		
 					 }
 					 
-					 if(!locFound){
-						 System.out.println("CRITICAL ERROR: ALL INSTANCES OF " + req.filename + "MISSING");
-						 abort();
-					 }
+					 
 				}
 				 
 			 } catch (ClassNotFoundException e) {
