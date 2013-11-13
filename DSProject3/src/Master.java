@@ -50,6 +50,14 @@ public class Master implements Runnable{
 		scheduler=null;
 	}
 	
+	private void addNode(InetSocketAddress node){
+		synchronized (activeNodes)
+		 {
+			activeNodes.add(node);
+		
+		 }
+	}
+	
 	private class WorkerCheck extends TimerTask {
 		//Checks at a fixed interval if the running 
 		@Override
