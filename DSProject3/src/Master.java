@@ -5,7 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -14,6 +13,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
 
 
 
@@ -77,14 +77,44 @@ public class Master implements Runnable{
 	
 	//Process a nodes status update and reacts accordingly
 	public void updateNodeStatus(StatusUpdate stat){
-			/*
 			switch(stat.type)
 			{
-				case: FAILED
-					
-					
+			case FAILED: //simply resend the task and hope it works 
+				sendTask(stat.task,stat.node);
+				break;
+			case TERMINATED:
+				sendTask(scheduler.getNextTask(stat.node),stat.node);
+				break;
+			default:
+				break;
 			}
-			*/
+			
+	}
+	
+	public void sendTask(Task t, InetSocketAddress node){
+		try
+		{
+			Socket client = new Socket(node.getAddress(),node.getPort());
+			OutputStream out = client.getOutputStream();
+			ObjectOutput objOut = new ObjectOutputStream(out);
+			
+			objOut.writeObject(t);
+
+			InputStream in = client.getInputStream();
+			ObjectInput objIn = new ObjectInputStream(in);
+			
+			//Read a dummy reply 
+			objIn.readObject();
+			
+
+			client.close();
+				
+		} catch (IOException e) {
+			System.out.println("Error: Unable to connect to Worker");
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	//TODO add some abort function

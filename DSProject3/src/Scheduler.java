@@ -26,7 +26,12 @@ public class Scheduler {
 		initialTasks = new TreeMap<Task,InetSocketAddress>();
 		//setup an initial schedule
 		bipartiteMatch();
-		System.out.println(initialTasks.toString());
+		//Simply add a reduce task for each file
+		for(int i=0; i<mapFiles.length; i++){
+			reduceTasks.add(new Task(PID_Index,Task.Type.REDUCE,mapFiles[i]));
+			PID_Index++;
+		}
+		
 	} 
 	
 	public TreeMap<Task,InetSocketAddress> getInitialTasks(){
