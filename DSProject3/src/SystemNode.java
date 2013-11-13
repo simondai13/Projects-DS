@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -41,7 +42,7 @@ public class SystemNode implements Runnable{
 				
 			try{
 				if(line == null)
-					out.write("FAIL");
+					out.println("FAIL");
 				//starts the appropriate type of node
 				else if(line.contains("MASTER")){
 						
@@ -55,14 +56,18 @@ public class SystemNode implements Runnable{
 				else if(line.contains("COMPUTE")){
 				
 					int portnum = Integer.parseInt(in.readLine());
-					ComputeNode compute = new ComputeNode(portnum);
+					int filePortnum = Integer.parseInt(in.readLine());
+					InetAddress masterAdr = InetAddress.getByName(in.readLine());
+					int masterPort = Integer.parseInt(in.readLine());
+					int masterDFSPort = Integer.parseInt(in.readLine());
+					ComputeNode compute = new ComputeNode(portnum, filePortnum, masterAdr, masterPort, masterDFSPort);
 					Thread t = new Thread(compute);
 					t.start();
-					out.write("OK");
+					out.println("OK");
 				}
 			}catch(IOException e){
 				
-				out.write("FAIL");
+				out.println("FAIL");
 			}
 			
 		}
