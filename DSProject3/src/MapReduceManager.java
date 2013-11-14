@@ -105,7 +105,7 @@ public class MapReduceManager {
 		try {
 			
 			Socket client = new Socket(masterLocation.getAddress(), masterLocation.getPort());
-			String message = "MASTER\n"+masterNodePort+"\n"+heartbeat+"\n"+delay+"\n";
+			String message = "MASTER\n"+masterNodePort+"\n"+masterDFSPort+"\n"+heartbeat+"\n"+delay+"\n"+replicationFactor;
 			PrintWriter out = new PrintWriter(client.getOutputStream());
 			BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 			out.println(message);

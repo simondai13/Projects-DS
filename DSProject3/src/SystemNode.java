@@ -47,9 +47,11 @@ public class SystemNode implements Runnable{
 				else if(line.contains("MASTER")){
 						
 					int portnum = Integer.parseInt(in.readLine());
+					int dfsPort = Integer.parseInt(in.readLine());
 					long heartbeat = Long.parseLong(in.readLine());
 					long delay = Long.parseLong(in.readLine());
-					Master m= null;//new Master(portnum);
+					int replicationFactor = Integer.parseInt(in.readLine());
+					Master m= new Master(heartbeat, delay, portnum, dfsPort, replicationFactor);
 					Thread t = new Thread(m);
 					t.start();
 				}
