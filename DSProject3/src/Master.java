@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -24,18 +25,20 @@ public class Master implements Runnable{
 	//private TreeMap<Long,StatusUpdate.Type> jobs;
 	//Map of node to currently executing tasks
 	//Keeps an array for parallel job execution
-	private TreeMap<InetSocketAddress,Task[]> jobs; 
-	private TreeMap<InetSocketAddress,Boolean> nodeStatus;
-	private TreeMap<String,ArrayList<InetSocketAddress>> fileLocs;
-	private TreeSet<InetSocketAddress> activeNodes; //maintain a list of operable nodes
+	public TreeMap<InetSocketAddress,Task[]> jobs; 
+	public TreeMap<InetSocketAddress,Boolean> nodeStatus;
+	public TreeMap<String,ArrayList<InetSocketAddress>> fileLocs;
+	public TreeSet<InetSocketAddress> activeNodes; //maintain a list of operable nodes
+	public List<InetSocketAddress> activeFileNodes;
 	private long heartRate;
 	private long delay;
 	private int portNum;
 	private ServerSocket server;
 	private Scheduler scheduler;
+	private MasterDFS dfsMaster;
 	
 	//heartbeatPeriod <<heartbeat on compute node
-	public Master(long heartbeatPeriod,long delay, int port) throws IOException{
+	public Master(long heartbeatPeriod,long delay, int port, int dfsPort,int replFactor) throws IOException{
 		server=new ServerSocket(port);
 		portNum=port;
 		
@@ -49,6 +52,9 @@ public class Master implements Runnable{
 		
 		//instantiate the scheduler only once all nodes have been initiated
 		scheduler=null;
+		
+		//instantiate the dfs system
+		dfsMaster=new MasterDFS(this,dfsPort,replFactor);
 	}
 	
 	private void startMapReduce(String[] files){

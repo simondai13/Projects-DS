@@ -24,13 +24,16 @@ public class ComputeNode implements Runnable{
 	private ServerSocket server;
 	private MapReducer mapRed;
 	
-	public ComputeNode(int portnum, MapReducer mapRed) throws IOException{
+	public ComputeNode(int portnum) throws IOException{
 		
 		server = new ServerSocket(portnum);
 		fileSystem = new FileSystemNode();
-		this.mapRed=mapRed;
+		mapRed = null;
 	}
 
+	public void startMapReduce(MapReducer mr){
+		this.mapRed=mr;
+	}
 
 	private class ConnectionHandle implements Runnable {
 		private Socket client;

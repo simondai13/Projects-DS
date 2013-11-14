@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -27,8 +28,26 @@ public class DFSNode implements Runnable{
 	public void distributeFile(String filename){
 		
 		//tell master, get locations 
+		List<InetSocketAddress> destinations = new ArrayList<InetSocketAddress>();
+		try {
+			Socket master = new Socket(masterLoc.getAddress(),masterLoc.getPort());
+			PrintWriter out = new PrintWriter(master.getOutputStream());
+			BufferedReader in = new BufferedReader(new InputStreamReader(master.getInputStream()));
+			out.println("NEWFILEREQ\n" + filename);
+			String res="";
+			while((res=in.readLine())!=null){
+				int port = Integer.parseInt(in.readLine());
+				destinations.add(new InetSocketAddress(res,port));
+			}
+			
+			in.close();
+			out.close();
+			master.close();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		
-		List<InetSocketAddress> destinations = null;
 		
 		//send copies to appropriate nodes
 		for(InetSocketAddress d : destinations){

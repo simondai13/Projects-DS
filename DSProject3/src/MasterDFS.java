@@ -8,17 +8,22 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.TreeMap;
 
 public class MasterDFS implements Runnable{
 
 	private ServerSocket server;
 	private TreeMap<String,List<InetSocketAddress>> fileLocs;
+	private Master master;
+	private int replFactor;
 	
-	public MasterDFS(int portnum) throws IOException{
+	public MasterDFS(Master master, int portnum, int replFactor) throws IOException{
 		
 		server = new ServerSocket(portnum);
 		fileLocs = new TreeMap<String, List<InetSocketAddress>>();
+		this.master=master;
+		this.replFactor=replFactor;
 	}
 	
 	private class ConnectionHandle implements Runnable {
@@ -61,6 +66,21 @@ public class MasterDFS implements Runnable{
 						locations.add(new InetSocketAddress(hostadr, hostPort));
 					}
 					fileLocs.put(filename, locations);
+				 }else if (line.contains("CLASSFILE")){
+					 for(InetSocketAddress addr : master.activeFileNodes){
+						 out.println(addr.getHostName());
+						 out.println(addr.getPort());
+					 }
+				 }else if (line.contains("NEWFILEREQ")){
+					 
+					 String filename = in.readLine();
+					 int r = (int) (Math.random() *master.activeFileNodes.size());
+					 for(int i=0; i<replFactor; i++){
+						 InetSocketAddress n=master.activeFileNodes.get((r+i)%master.activeFileNodes.size());
+						 out.println(n.getHostName());
+					     out.println(n.getPort());
+					 }
+					 
 				 }
 				 
 				 out.close();
