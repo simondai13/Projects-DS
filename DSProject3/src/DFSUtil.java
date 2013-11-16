@@ -69,11 +69,8 @@ public class DFSUtil {
 		return null;
 	}
 	
-	//Compute node uses this static method AFTER it receives a request for a file on its machine
-	//SENDS a file TO some other node
-	public static void sendFile(PrintWriter out, String filename) throws IOException {
-		
-		String message = "FILESEND\n"+filename+"\n";
+	public static void sendFile(PrintWriter out, String filename, String tag) throws IOException {
+		String message = tag + "\n"+filename+"\n";
 		
 		//reads the file, writes it to destination
 		BufferedReader in = new BufferedReader(new FileReader(filename));
@@ -85,6 +82,12 @@ public class DFSUtil {
 		}
 		
 		in.close();
+	}
+	
+	//Compute node uses this static method AFTER it receives a request for a file on its machine
+	//SENDS a file TO some other node
+	public static void sendFile(PrintWriter out, String filename) throws IOException {
+		sendFile(out,filename,"FILESEND");
 	}
 	
 	

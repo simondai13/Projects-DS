@@ -10,7 +10,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
@@ -25,10 +27,11 @@ public class Master implements Runnable{
 	//private TreeMap<Long,StatusUpdate.Type> jobs;
 	//Map of node to currently executing tasks
 	//Keeps an array for parallel job execution
-	public TreeMap<InetSocketAddress,Task[]> jobs; 
-	public TreeMap<InetSocketAddress,Boolean> nodeStatus;
-	public TreeMap<String,ArrayList<InetSocketAddress>> fileLocs;
-	public TreeSet<InetSocketAddress> activeNodes; //maintain a list of operable nodes
+	public Map<InetSocketAddress,Task[]> jobs; 
+	public Map<InetSocketAddress,Boolean> nodeStatus;
+	public Map<String,ArrayList<InetSocketAddress>> fileLocs;
+	public Set<InetSocketAddress> activeNodes; //maintain a list of operable nodes
+	public Map<InetSocketAddress,Integer> dfsPortToMRPort;
 	public List<InetSocketAddress> activeFileNodes;
 	private long heartRate;
 	private long delay;
@@ -49,56 +52,34 @@ public class Master implements Runnable{
 		nodeStatus= new TreeMap<InetSocketAddress,Boolean>();
 		fileLocs= new TreeMap<String,ArrayList<InetSocketAddress>>();
 		activeNodes= new TreeSet<InetSocketAddress>();
+		dfsPortToMRPort = null;
 		
 		//instantiate the scheduler only once all nodes have been initiated
 		scheduler=null;
 		
 		//instantiate the dfs system
 		dfsMaster=new MasterDFS(this,dfsPort,replFactor);
+		Thread dfsThread=new Thread(dfsMaster);
+		dfsThread.start();
 	}
-	
-	private void startMapReduce(String[] files){
+
+	private void startMapReduce(String mapReduce){
 		//Send in the full node array, not just the working ones, the master will
 		//sort out failed nodes
-		InetSocketAddress[] nodes = (InetSocketAddress[]) nodeStatus.keySet().toArray();
-		
-		scheduler = new Scheduler(files, nodes, fileLocs);
-		TreeMap<Task,InetSocketAddress> tasks = scheduler.getInitialTasks();
-		
-		for(Entry<Task,InetSocketAddress> e :tasks.entrySet())
+		scheduler = new Scheduler(dfsMaster.fileNodes, dfsMaster.fileLocs,mapReduce);
+		TreeMap<InetSocketAddress,Task> tasks = scheduler.getInitialTasks();
+		System.out.println("Starting Map Reduce Task");
+		for(Entry<InetSocketAddress,Task> e :tasks.entrySet())
 		{
-			sendTask(e.getKey(),e.getValue());
+			sendTask(e.getValue(),new InetSocketAddress(e.getKey().getAddress(),dfsPortToMRPort.get(e.getKey())));
 		}
 	}
-	
-	private void addNode(InetSocketAddress node){
-		synchronized (activeNodes)
-		 {
-			activeNodes.add(node);
-			nodeStatus.put(node, true);		
-		 }
-	}
-	
-	private void addFileReplica(InetSocketAddress dest, String file){
-		synchronized(fileLocs)
-		{
-			if(fileLocs.containsKey(file)){
-				fileLocs.get(file).add(dest);
-			}
-			else{
-				ArrayList<InetSocketAddress> locs= new ArrayList<InetSocketAddress>();
-				locs.add(dest);
-				fileLocs.put(file, locs);
-			}
-		}
-	}
-	
 	
 	private class WorkerCheck extends TimerTask {
-		//Checks at a fixed interval if the running 
+		
 		@Override
 		public void run() {
-			synchronized(jobs) {
+			/*synchronized(jobs) {
 				synchronized (activeNodes)
 				 {
 					for (Entry<InetSocketAddress,Boolean> entry : nodeStatus.entrySet())
@@ -112,6 +93,7 @@ public class Master implements Runnable{
 					}
 				 }
 			}
+			*/
 		}
 	}
 	
@@ -138,25 +120,19 @@ public class Master implements Runnable{
 	public void sendTask(Task t, InetSocketAddress node){
 		try
 		{
+			System.out.println("Sending Task" + t.PID);
+			if(dfsPortToMRPort==null){
+				System.out.println("No node configuration");
+			}
 			Socket client = new Socket(node.getAddress(),node.getPort());
 			OutputStream out = client.getOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(out);
 			
 			objOut.writeObject(t);
-
-			InputStream in = client.getInputStream();
-			ObjectInput objIn = new ObjectInputStream(in);
-			
-			//Read a dummy reply 
-			objIn.readObject();
-			
-
 			client.close();
 				
 		} catch (IOException e) {
 			System.out.println("Error: Unable to connect to Worker");
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -183,7 +159,7 @@ public class Master implements Runnable{
 				 //Make sure this message is packed properly
 				 if(StatusUpdate.class.isAssignableFrom(obj.getClass()))
 				 {
-			
+					 System.out.println("Got status update from");
 					 StatusUpdate stat = (StatusUpdate) obj;
 					 synchronized (jobs)
 					 {
@@ -200,61 +176,21 @@ public class Master implements Runnable{
 					 MasterControlMsg msg = (MasterControlMsg) obj;
 					 switch(msg.type) {
 					 	case START:
-					 		startMapReduce(msg.files);
+					 		System.out.println(msg.mapReduce + "AAAAAAAAAAAAAAAAAAAAA");
+					 		startMapReduce(msg.mapReduce);
 					 		break;
 					 	default:
 					 		break;
 						 
 					 }
+				 } else if(MasterConfiguration.class.isAssignableFrom(obj.getClass())){
+					 System.out.println("Node configuration recieved");
+					 MasterConfiguration cfg = (MasterConfiguration) obj;
+					 dfsPortToMRPort= cfg.dfsToMRports;
+					 if(dfsPortToMRPort==null)
+						 System.out.println("PBOB");
 				 }
-				 else if(FileLocationRequest.class.isAssignableFrom(obj.getClass()))
-				 {
-					 OutputStream out = client.getOutputStream();
-					 ObjectOutput objOut = new ObjectOutputStream(out);
-					 
-					 //Send the first valid node address with this data
-					 //If the node fails when the worker tries to contact it, the worker
-					 //then has to send the master another request
-					 FileLocationRequest req = (FileLocationRequest) obj;
-					 switch(req.type) {
-					 	case ADD:
-					 		//TODO add some locations of where we should duplicate this file
-					 		InetSocketAddress[] repLocations= new InetSocketAddress[1];
-					 		repLocations[0]=req.nodes[0];
-					 		FileLocationRequest resp=new FileLocationRequest();
-					 		resp.nodes=repLocations;
-					 		resp.type=FileLocationRequest.Type.ADD;
-					 		objOut.writeObject(resp);
-					 		break;
-					 	case LOC:
-					 		InetSocketAddress loc=null;
-							 ArrayList<InetSocketAddress> locs;
-							 synchronized(fileLocs){
-								 locs = fileLocs.get(req.filename);
-							 }
-							 
-							 for(int i=0; i<=locs.size(); i++){
-								 synchronized (activeNodes)
-								 {
-									 if(activeNodes.contains(locs.get(i))){
-										 loc=locs.get(i);
-									 }
-								 }
-							 }
-							 
-							 if(loc!=null){
-								 objOut.writeObject(loc);
-							 }
-							 else{
-								 System.out.println("CRITICAL ERROR: ALL INSTANCES OF " + req.filename + "MISSING");
-								 abort();
-							 }
-							 break;
-					 		
-					 }
-					 
-					 
-				}
+				 
 				 
 			 } catch (ClassNotFoundException e) {
 				 System.out.println("Invalid Process Request");

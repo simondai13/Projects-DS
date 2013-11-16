@@ -10,4 +10,9 @@ public class StatusUpdate implements Serializable {
 	}
 	public InetSocketAddress node;
 	public Type type;
+	public StatusUpdate(Task t, Type type, InetSocketAddress node){
+		task=t;
+		this.type=type;
+		this.node=node;
+	}
 }

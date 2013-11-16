@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -31,13 +32,13 @@ public class SystemNode implements Runnable{
 			PrintWriter out = null;
 			BufferedReader in = null;
 			String line = null;
-			
 			try{ 
 				out = new PrintWriter(client.getOutputStream());
 				in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 				line = in.readLine();
 
 			 } catch (IOException e) {
+				 e.printStackTrace();
 			 }
 				
 			try{
@@ -54,6 +55,9 @@ public class SystemNode implements Runnable{
 					Master m= new Master(heartbeat, delay, portnum, dfsPort, replicationFactor);
 					Thread t = new Thread(m);
 					t.start();
+					out.println("OK");
+					out.flush();
+					System.out.println("Master initiated on " + InetAddress.getLocalHost().toString() +":" + portnum);
 				}
 				else if(line.contains("COMPUTE")){
 				
@@ -62,15 +66,19 @@ public class SystemNode implements Runnable{
 					InetAddress masterAdr = InetAddress.getByName(in.readLine());
 					int masterPort = Integer.parseInt(in.readLine());
 					int masterDFSPort = Integer.parseInt(in.readLine());
-					ComputeNode compute = new ComputeNode(portnum, filePortnum, masterAdr, masterPort, masterDFSPort);
-					Thread t = new Thread(compute);
+					DFSNode node = new DFSNode(new InetSocketAddress(masterAdr,masterDFSPort), filePortnum);
+					Thread t = new Thread(node);
 					t.start();
+					ComputeNode compute = new ComputeNode(portnum,new InetSocketAddress(masterAdr,masterPort),node);
+					Thread tCompute = new Thread(compute);
+					tCompute.start();
 					out.println("OK");
+					out.flush();
+					System.out.println("Worker initiated on " + InetAddress.getLocalHost().toString()+ ":"+portnum);
 				}
 			}catch(IOException e){
-				
-				out.println("FAIL");
-			}
+				e.printStackTrace();
+				out.println("FAIL");			}
 			
 		}
 	}
@@ -82,7 +90,6 @@ public class SystemNode implements Runnable{
 		while(true) {
 			try {
 				Socket client = server.accept();
-				
 				//Generate a connection handle and run it in a 
 				//separate thread
 				ConnectionHandle ch = new ConnectionHandle(client);

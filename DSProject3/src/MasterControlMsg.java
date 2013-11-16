@@ -7,6 +7,7 @@ public class MasterControlMsg implements Serializable {
 	public enum Type {
 		START, PAUSE, RESUME, TERMINATE 
 	}
-	String[] files;
+	//String[] files;
 	Type type;
+	String mapReduce;
 }

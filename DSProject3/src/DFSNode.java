@@ -5,9 +5,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +20,8 @@ import java.util.List;
 public class DFSNode implements Runnable{
 
 	private ServerSocket server;
-	private InetSocketAddress masterLoc;
+	public InetSocketAddress masterLoc;
+	public MapReducer mr;
 	
 	public DFSNode(InetSocketAddress masterLoc, int portnum) throws IOException{
 		
@@ -24,10 +29,8 @@ public class DFSNode implements Runnable{
 		this.masterLoc = masterLoc;
 	}
 	
-	//assume local file exists, makes it distributed
-	public void distributeFile(String filename){
-		
-		//tell master, get locations 
+	//Distribute a file over the specified nodes
+	public List<InetSocketAddress> getReplLocs(String filename){
 		List<InetSocketAddress> destinations = new ArrayList<InetSocketAddress>();
 		try {
 			Socket master = new Socket(masterLoc.getAddress(),masterLoc.getPort());
@@ -47,7 +50,16 @@ public class DFSNode implements Runnable{
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+		return destinations;
+	}
+	
+	//Distribute a file over the nodes specified by the master
+	public void distributeFile(String filename){
+		distributeFile(filename,getReplLocs(filename));
+	}
+	
+	//assume local file exists, makes it distributed
+	public void distributeFile(String filename, List<InetSocketAddress> destinations){
 		
 		//send copies to appropriate nodes
 		for(InetSocketAddress d : destinations){
@@ -115,7 +127,7 @@ public class DFSNode implements Runnable{
 					 DFSUtil.sendFile(out, filename);
 				 }
 				 //node is receiving a file
-				 else if(line.contains("FILESEND")){
+				 else if(line.contains("FILESEND") || line.contains("CLASSFILE")){
 					 
 					String filename = in.readLine();
 					File f = new File(filename);
@@ -129,13 +141,16 @@ public class DFSNode implements Runnable{
 						fileWriter.println(fileLine);
 					}
 					fileWriter.close();
+					System.out.println("File " + filename + " replicated on " + 
+								InetAddress.getLocalHost().toString() +":" + client.getLocalPort());			
+
 				 }
 				 
 				 out.close();
 				 in.close();
 			 } catch (IOException e) {
-				 
-			 }
+				 e.printStackTrace();
+			 } 
 		}
 	}
 	

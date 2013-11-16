@@ -14,7 +14,8 @@ import java.util.TreeMap;
 public class MasterDFS implements Runnable{
 
 	private ServerSocket server;
-	private TreeMap<String,List<InetSocketAddress>> fileLocs;
+	public TreeMap<String,List<InetSocketAddress>> fileLocs;
+	public List<InetSocketAddress> fileNodes;
 	private Master master;
 	private int replFactor;
 	
@@ -24,6 +25,7 @@ public class MasterDFS implements Runnable{
 		fileLocs = new TreeMap<String, List<InetSocketAddress>>();
 		this.master=master;
 		this.replFactor=replFactor;
+		fileNodes=new ArrayList<InetSocketAddress>();
 	}
 	
 	private class ConnectionHandle implements Runnable {
@@ -65,20 +67,44 @@ public class MasterDFS implements Runnable{
 						int hostPort = Integer.parseInt(in.readLine());
 						locations.add(new InetSocketAddress(hostadr, hostPort));
 					}
+					System.out.println("Host made aware of Distributed file:"+ filename);
 					fileLocs.put(filename, locations);
-				 }else if (line.contains("CLASSFILE")){
-					 for(InetSocketAddress addr : master.activeFileNodes){
-						 out.println(addr.getHostName());
-						 out.println(addr.getPort());
+				 //Node is requesting all locations so that the MapReduce.class can be copied to all nodes
+				 }else if (line.contains("NODELOCATIONS")){
+						while((line=in.readLine())!=null){
+							InetAddress hostadr = InetAddress.getByName(line);
+							int hostPort = Integer.parseInt(in.readLine());
+							fileNodes.add(new InetSocketAddress(hostadr, hostPort));
+						}
+				 }
+				 else if (line.contains("CLASSFILE")){
+					 for(InetSocketAddress addr : fileNodes){
+						 if(!addr.equals((InetSocketAddress) client.getRemoteSocketAddress())){
+							out.println(addr.getHostName());
+						 	out.println(addr.getPort());
+					 	}
 					 }
+				 //Node is requesting locations of where to replicate new files, simply send 3 random
+				 //addresses
 				 }else if (line.contains("NEWFILEREQ")){
 					 
 					 String filename = in.readLine();
 					 int r = (int) (Math.random() *master.activeFileNodes.size());
-					 for(int i=0; i<replFactor; i++){
+					 
+					 int j=replFactor-1; //We already have a copy on the FILEREQ node
+					 //it is possible we lost enough nodes that the replication factor can't be satisfied
+					 j=Math.min(j,master.activeNodes.size()-1);
+					 int i=0;
+					 while(i<j){
 						 InetSocketAddress n=master.activeFileNodes.get((r+i)%master.activeFileNodes.size());
-						 out.println(n.getHostName());
-					     out.println(n.getPort());
+						 if(!n.equals((InetSocketAddress) client.getRemoteSocketAddress())){
+							out.println(n.getHostName());
+					     	out.println(n.getPort());
+						 }else{
+							j++;
+						 }
+						 
+						 i++;
 					 }
 					 
 				 }
