@@ -109,7 +109,9 @@ public class Master implements Runnable{
 				sendTask(stat.task,stat.node);
 				break;
 			case TERMINATED:
-				sendTask(scheduler.getNextTask(stat.node),stat.node);
+				Task next= scheduler.getNextTask(stat.node);
+				if(next!=null)
+					sendTask(scheduler.getNextTask(stat.node),stat.node);
 				break;
 			default:
 				break;
@@ -120,15 +122,19 @@ public class Master implements Runnable{
 	public void sendTask(Task t, InetSocketAddress node){
 		try
 		{
-			System.out.println("Sending Task" + t.PID);
+			System.out.println("Sending Task " + t.PID);
 			if(dfsPortToMRPort==null){
 				System.out.println("No node configuration");
 			}
 			Socket client = new Socket(node.getAddress(),node.getPort());
 			OutputStream out = client.getOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(out);
+			System.out.println("SENDER");
+			InputStream in = client.getInputStream();
+			ObjectInput objIn = new ObjectInputStream(in);
 			
 			objOut.writeObject(t);
+			
 			client.close();
 				
 		} catch (IOException e) {
