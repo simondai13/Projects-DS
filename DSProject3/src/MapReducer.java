@@ -6,5 +6,6 @@ public interface MapReducer {
 	
 	//User defined function to take an array of map outputs 
 	public String[] reduce(String[] lines);
+	
 
 }

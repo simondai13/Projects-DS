@@ -19,26 +19,52 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeMap;
+
 
 public class ComputeNode implements Runnable{
 
 	
-	//files on this compute node
-	private FileSystemNode fileSystem;
 	private ServerSocket server;
 	private InetSocketAddress master;
 	private DFSNode dfs;
 	private int portnum;
+	private int numCores;
+	//Simple data structure that does not need to be locked,
+	//so it can be quickly checked each iteration of the map/reduce task
+	volatile boolean[] killTask; 
+	Map<Integer,Integer> pidToCore;
 	
-	public ComputeNode(int portnum, InetSocketAddress master,DFSNode dfs) throws IOException{
+	public ComputeNode(int portnum, InetSocketAddress master,DFSNode dfs, int numCores) throws IOException{
 		this.portnum=portnum;
 		this.master=master;
+		this.numCores=numCores;
 		server = new ServerSocket(portnum);
-		fileSystem = new FileSystemNode();
 		this.dfs=dfs;
+		killTask=new boolean[numCores];
+		pidToCore=new TreeMap<Integer,Integer>();
+	}
+	
+	private class Heartbeat extends TimerTask {
+		
+		@Override
+		public void run() {
+			try {
+				Socket client = new Socket(master.getAddress(),master.getPort());
+				OutputStream out = client.getOutputStream();
+				ObjectOutput objOut = new ObjectOutputStream(out);
+				objOut.writeObject(new StatusUpdate(null, StatusUpdate.Type.HEARTBEAT, new InetSocketAddress(InetAddress.getLocalHost(),portnum)));
+				
+				client.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
 	}
 
 	private class ConnectionHandle implements Runnable {
@@ -67,41 +93,65 @@ public class ComputeNode implements Runnable{
 					 
 					 startNewTask(t);	
 				 }
+				 else if(KillTask.class.isAssignableFrom(obj.getClass())){
+					 KillTask kt = (KillTask) obj;
+					 System.out.println("WORKSSDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+					 synchronized(pidToCore){
+						 if(pidToCore.containsKey(kt.PID)){
+							 int i = pidToCore.get(kt.PID);
+							 System.out.println("Killing task " + kt.PID);
+							 killTask[i]=true;
+						 }
+					 }
+				 }
 				 
-				 //Simply send a dummy message back to the master affirming we got this task
-				 //objOut.writeObject(obj);
 
 			 } catch (IOException e) {
+				 e.printStackTrace();
 				 
 			 } catch (ClassNotFoundException e) {
-				   
+				 e.printStackTrace();
 			 }
 		}
 	}
 	
-	public void sendTaskFinish(Task t){
-		System.out.println("WORKS");
+	public void sendTaskFinish(Task t, StatusUpdate.Type type){
 		try {
 			Socket client = new Socket(master.getAddress(),master.getPort());
 			OutputStream out = client.getOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(out);
 			System.out.println("WORKS");
-			objOut.writeObject(new StatusUpdate(t, StatusUpdate.Type.TERMINATED, new InetSocketAddress(InetAddress.getLocalHost(),portnum)));
+			objOut.writeObject(new StatusUpdate(t, type, new InetSocketAddress(InetAddress.getLocalHost(),portnum)));
 			
 			client.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println(master.getPort() +"MASTA PORT");
+		
+		synchronized(pidToCore){
+			pidToCore.remove(t.PID);
+		 }
 
 	}
 	
 	public void startNewTask(Task t){
 		String line;
+		
+		int coreNum=0;
+		synchronized(pidToCore){
+			for(int i=0; i<numCores; i++){
+				if(!pidToCore.values().contains(i)){
+					pidToCore.put(t.PID, i);
+					coreNum=i;
+					break;
+				}
+			}
+		 }
+		killTask[coreNum]=false;
+		
 		//Create the map reducer
-		File file = new File(""); //current directory
-	    // Convert File to a URL
+		File file = new File("");
 	    URL url=null;
 		try {
 			url = file.toURL();
@@ -111,11 +161,7 @@ public class ComputeNode implements Runnable{
 		}
 	    URL[] urls = new URL[]{url};
 
-	    // Create a new class loader with the directory
 	    ClassLoader cl = new URLClassLoader(urls);
-
-	    // Load in the class; MyClass.class should be located in
-	    // the directory file:/c:/myclasses/com/mycompany
 	    Class<?> cls;
 	    MapReducer mr=null;
 	    try{
@@ -136,7 +182,7 @@ public class ComputeNode implements Runnable{
 			 
 			 String mapline;
 			if(t.type==Task.Type.MAP){
-				while((line = br.readLine()) != null){
+				while((line = br.readLine()) != null && !killTask[coreNum]){
 					mapline=mr.map(line);
 					if(mapline!=null)
 					{
@@ -146,22 +192,23 @@ public class ComputeNode implements Runnable{
 				}
 			}
 			else {
-				ArrayList<String> lines = new ArrayList<String>();
-				while((line = br.readLine()) !=null ){
-					lines.add(line);
-				}
-				System.out.println("Works");
-				String[] lineArray = new String[lines.size()];
-				lines.toArray(lineArray);
-				String[] resultLines= mr.reduce(lineArray);
-				
-				if(resultLines!=null){
-					//This should be changed to write to the distributed system
-					for(int i=0; i<resultLines.length; i++){
-						bw.write(lineArray[i]);
+				String[] mapInput = new String[2];
+				String[] mapOutput = new String[2];
+				mapOutput[1] = br.readLine();
+				mapOutput[0] = null;
+				while((line = br.readLine()) !=null && !killTask[coreNum]){
+					mapInput[0]=mapOutput[1];
+					mapInput[1]=line;
+					mapOutput = mr.reduce(mapInput);
+					
+					if(mapOutput[0]!=null){
+						bw.write(mapOutput[0]);
 						bw.newLine();
 					}
 				}
+				
+				if(mapOutput[1]!=null)
+					bw.write(mapOutput[1]);
 				
 			}
 			
@@ -180,13 +227,20 @@ public class ComputeNode implements Runnable{
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-	    sendTaskFinish(t);
+	    if(killTask[coreNum]){
+	    	sendTaskFinish(t,StatusUpdate.Type.FAILED);
+	    	System.out.println("Task " + t.PID + " Killed");
+	    }else{
+	    	sendTaskFinish(t,StatusUpdate.Type.TERMINATED);
+	    }
 	}
 		
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-
+		Timer timer = new Timer();
+		timer.scheduleAtFixedRate(new Heartbeat(),3000,1000);
+		
 		while(true) {
 			try {
 				Socket client = server.accept();

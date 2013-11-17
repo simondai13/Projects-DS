@@ -18,44 +18,41 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-
-
-
-
 public class Master implements Runnable{
 	 
 	//private TreeMap<Long,StatusUpdate.Type> jobs;
 	//Map of node to currently executing tasks
 	//Keeps an array for parallel job execution
-	public Map<InetSocketAddress,Task[]> jobs; 
+	public Map<InetSocketAddress,List<Task>> jobs; 
 	public Map<InetSocketAddress,Boolean> nodeStatus;
-	public Map<String,ArrayList<InetSocketAddress>> fileLocs;
+	//public Map<String,ArrayList<InetSocketAddress>> fileLocs;
 	public Set<InetSocketAddress> activeNodes; //maintain a list of operable nodes
 	public Map<InetSocketAddress,Integer> dfsPortToMRPort;
-	public List<InetSocketAddress> activeFileNodes;
-	private long heartRate;
-	private long delay;
 	private int portNum;
+	private int numCores;
 	private ServerSocket server;
 	private Scheduler scheduler;
 	private MasterDFS dfsMaster;
+	volatile boolean isDone;
+	volatile boolean mapCanceled;
 	
-	//heartbeatPeriod <<heartbeat on compute node
-	public Master(long heartbeatPeriod,long delay, int port, int dfsPort,int replFactor) throws IOException{
+	public Master(int port, int dfsPort,int replFactor,int numCores) throws IOException{
 		server=new ServerSocket(port);
 		portNum=port;
+		this.numCores=numCores;
 		
-		heartRate=2*heartbeatPeriod;
-		this.delay=delay;
 		
-		jobs=new TreeMap<InetSocketAddress,Task[]>();
-		nodeStatus= new TreeMap<InetSocketAddress,Boolean>();
-		fileLocs= new TreeMap<String,ArrayList<InetSocketAddress>>();
-		activeNodes= new TreeSet<InetSocketAddress>();
+		jobs=new TreeMap<InetSocketAddress,List<Task>>(new NodeCompare());
+		nodeStatus= new TreeMap<InetSocketAddress,Boolean>(new NodeCompare());
+		//fileLocs= new TreeMap<String,ArrayList<InetSocketAddress>>();
+		activeNodes= new TreeSet<InetSocketAddress>(new NodeCompare());
 		dfsPortToMRPort = null;
 		
 		//instantiate the scheduler only once all nodes have been initiated
 		scheduler=null;
+		
+		//We are "done" until we are given a map reduce task
+		isDone=true;
 		
 		//instantiate the dfs system
 		dfsMaster=new MasterDFS(this,dfsPort,replFactor);
@@ -64,14 +61,20 @@ public class Master implements Runnable{
 	}
 
 	private void startMapReduce(String mapReduce){
+		mapCanceled=false;
+		isDone=false;
 		//Send in the full node array, not just the working ones, the master will
 		//sort out failed nodes
-		scheduler = new Scheduler(dfsMaster.fileNodes, dfsMaster.fileLocs,mapReduce);
-		TreeMap<InetSocketAddress,Task> tasks = scheduler.getInitialTasks();
-		System.out.println("Starting Map Reduce Task");
-		for(Entry<InetSocketAddress,Task> e :tasks.entrySet())
-		{
-			sendTask(e.getValue(),new InetSocketAddress(e.getKey().getAddress(),dfsPortToMRPort.get(e.getKey())));
+		scheduler = new Scheduler(dfsMaster.fileNodes, dfsMaster.fileLocs,mapReduce,numCores);
+		TreeMap<InetSocketAddress,List<Task>> tasks = scheduler.getInitialTasks();
+		for(Entry<InetSocketAddress,List<Task>> e :tasks.entrySet()){
+			jobs.put(new InetSocketAddress(e.getKey().getAddress(),dfsPortToMRPort.get(e.getKey())),new ArrayList<Task>());
+		}
+		for(Entry<InetSocketAddress,List<Task>> e :tasks.entrySet())
+		{	
+			for(Task t : e.getValue()){
+				sendTask(t,new InetSocketAddress(e.getKey().getAddress(),dfsPortToMRPort.get(e.getKey())));
+			}
 		}
 	}
 	
@@ -79,12 +82,12 @@ public class Master implements Runnable{
 		
 		@Override
 		public void run() {
-			/*synchronized(jobs) {
+			synchronized(jobs) {
 				synchronized (activeNodes)
 				 {
 					for (Entry<InetSocketAddress,Boolean> entry : nodeStatus.entrySet())
 					{
-						if(!entry.getValue()  &&activeNodes.contains(entry.getValue()))
+						if(!entry.getValue()  &&activeNodes.contains(entry.getKey()))
 						{
 							handleFailure(entry.getKey());
 							System.out.println("Lost connection to: " + entry.getKey().getAddress()+ "attempting recovery");
@@ -93,12 +96,29 @@ public class Master implements Runnable{
 					}
 				 }
 			}
-			*/
+			
 		}
 	}
 	
 	public void handleFailure(InetSocketAddress node){
-		 
+		List<Task> tasks= jobs.get(node);
+		for(Task t: tasks){
+			scheduler.addTask(t);
+		}
+		jobs.put(node, new ArrayList<Task>());
+		activeNodes.remove(node);
+	}
+	
+	//This method is called after a task completes and the scheduler has no new tasks,
+	//Check to make sure all running jobs are complete
+	public boolean checkIsCompleted(){
+		boolean done=true;
+		for(List<Task> tasks : jobs.values()){
+			if(!tasks.isEmpty()){
+				done=false;
+			}
+		}
+		return done;
 	}
 	
 	//Process a nodes status update and reacts accordingly
@@ -110,8 +130,18 @@ public class Master implements Runnable{
 				break;
 			case TERMINATED:
 				Task next= scheduler.getNextTask(stat.node);
+				List<Task> tasks= jobs.get(stat.node);
+				int taskIndex=0;
+				for(int i=0; i< tasks.size(); i++){
+					if(tasks.get(i).PID ==stat.task.PID)
+						taskIndex=i;
+				}
+				tasks.remove(taskIndex);
+				
 				if(next!=null)
-					sendTask(scheduler.getNextTask(stat.node),stat.node);
+					sendTask(next,stat.node);
+				else
+					isDone = checkIsCompleted();
 				break;
 			default:
 				break;
@@ -119,7 +149,45 @@ public class Master implements Runnable{
 			
 	}
 	
+	private void terminateAll(){
+		mapCanceled=true;
+		System.out.println("KILLING MAP REDUCE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+		System.out.println(jobs);
+		//Send messages to all workers to kill all active tasks
+		try{
+			for(Map.Entry<InetSocketAddress,List<Task>> e : jobs.entrySet()){
+				List<Task> tasks = e.getValue();
+				for(Task t: tasks){
+					Socket client = new Socket(e.getKey().getAddress(),e.getKey().getPort());
+					OutputStream out = client.getOutputStream();
+					ObjectOutput objOut = new ObjectOutputStream(out);
+					System.out.println("SENDING KILL TASK");
+					InputStream in = client.getInputStream();
+					ObjectInput objIn = new ObjectInputStream(in);
+					KillTask kt = new KillTask();
+					kt.PID=t.PID;
+					
+					objOut.writeObject(kt);
+					System.out.println("KILLTASK SENT");
+					client.close();
+				}
+			}
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		
+		//Clear the jobs
+		for(Map.Entry<InetSocketAddress, List<Task>> j : jobs.entrySet()){
+			jobs.put(j.getKey(), new ArrayList<Task>());
+		}
+		isDone = true;
+	}
+	
+	
 	public void sendTask(Task t, InetSocketAddress node){
+		List<Task> tasks= jobs.get(node);
+		tasks.add(t);
+		
 		try
 		{
 			System.out.println("Sending Task " + t.PID);
@@ -129,7 +197,6 @@ public class Master implements Runnable{
 			Socket client = new Socket(node.getAddress(),node.getPort());
 			OutputStream out = client.getOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(out);
-			System.out.println("SENDER");
 			InputStream in = client.getInputStream();
 			ObjectInput objIn = new ObjectInputStream(in);
 			
@@ -141,8 +208,16 @@ public class Master implements Runnable{
 			System.out.println("Error: Unable to connect to Worker");
 			e.printStackTrace();
 		}
+		
 	}
 	
+	//Check if a file node is active by checking its corresponding mapreduce status
+	public boolean isActiveFileNode(InetSocketAddress a){
+		synchronized (activeNodes)
+		 {
+			return activeNodes.contains(new InetSocketAddress(a.getAddress(),dfsPortToMRPort.get(a)));
+		 }
+	}
 	//TODO add some abort function
 	public void abort(){}
 	
@@ -162,29 +237,56 @@ public class Master implements Runnable{
 				 ObjectInput objIn = new ObjectInputStream(in);
 				 Object obj = objIn.readObject();
 				 
+				 
 				 //Make sure this message is packed properly
 				 if(StatusUpdate.class.isAssignableFrom(obj.getClass()))
 				 {
-					 System.out.println("Got status update from");
 					 StatusUpdate stat = (StatusUpdate) obj;
 					 synchronized (jobs)
 					 {
+						 if(!activeNodes.contains(stat.node)){
+							 System.out.println("Recovered node at " +stat.node.getAddress());
+							 activeNodes.add(stat.node);
+							 nodeStatus.put(stat.node,true);
+						 }
+						 
 						 switch(stat.type) {
 						 	case HEARTBEAT: 
 						 		nodeStatus.put(stat.node,true);
 						 		break;
 						 	default:
-						 		updateNodeStatus(stat);
+						 		if(!mapCanceled){
+						 			updateNodeStatus(stat);
+						 		}
 						 }
 					 }
 				 } else if(MasterControlMsg.class.isAssignableFrom(obj.getClass()))
 				 {
+					 //Note that all these control messages return some result.
+					 //This is to force the API to block until these tasks are actually complete
+					 OutputStream out = client.getOutputStream();
+					 ObjectOutput objOut = new ObjectOutputStream(out);
+					 
 					 MasterControlMsg msg = (MasterControlMsg) obj;
 					 switch(msg.type) {
 					 	case START:
-					 		System.out.println(msg.mapReduce + "AAAAAAAAAAAAAAAAAAAAA");
 					 		startMapReduce(msg.mapReduce);
+					 		
+							objOut.writeObject(new String("OK"));
 					 		break;
+					 	case TERMINATE:
+					 		terminateAll();
+							objOut.writeObject(new String("OK"));
+					 		break;
+					 	case QUERY:
+					 		MapReduceState resp = new MapReduceState();
+					 		resp.activeJobs=jobs;
+					 		resp.activeNodes=activeNodes;
+					 		resp.fileLocs=dfsMaster.fileLocs;
+					 		resp.isDone=isDone;
+					 		
+							objOut.writeObject(resp);
+							break;
 					 	default:
 					 		break;
 						 
@@ -193,9 +295,12 @@ public class Master implements Runnable{
 					 System.out.println("Node configuration recieved");
 					 MasterConfiguration cfg = (MasterConfiguration) obj;
 					 dfsPortToMRPort= cfg.dfsToMRports;
-					 if(dfsPortToMRPort==null)
-						 System.out.println("PBOB");
-				 }
+					 for(Map.Entry<InetSocketAddress, Integer> e: dfsPortToMRPort.entrySet()){
+						 jobs.put(new InetSocketAddress(e.getKey().getAddress(),e.getValue()),new ArrayList<Task>());
+						 nodeStatus.put(new InetSocketAddress(e.getKey().getAddress(),e.getValue()),true);
+						 activeNodes.add(new InetSocketAddress(e.getKey().getAddress(),e.getValue()));
+					 }
+				 } 
 				 
 				 
 			 } catch (ClassNotFoundException e) {
@@ -212,7 +317,7 @@ public class Master implements Runnable{
 	public void run() {
 		//Initialize the heartbeat monitor
 		Timer timer = new Timer();
-		timer.scheduleAtFixedRate(new WorkerCheck(),delay,heartRate);
+		timer.scheduleAtFixedRate(new WorkerCheck(),10000,3000);
 		
 		while(true) {
 			try {

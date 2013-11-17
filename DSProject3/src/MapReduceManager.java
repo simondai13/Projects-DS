@@ -104,14 +104,78 @@ public class MapReduceManager {
 				ObjectOutput objOut = new ObjectOutputStream(out);
 				
 				objOut.writeObject(mc);
+				
+				InputStream in = client.getInputStream();
+				ObjectInput objInput = new ObjectInputStream(in);
+				
+				objInput.readObject();
 
 				client.close();
 				
 			} catch (IOException e) {
 				System.out.println("Error: Unable to connect to Master");
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			} 
 	    	
 		}
+	}
+	
+	public void killMapReduce(){
+		Socket client;
+		try {
+			client = new Socket(masterLocation.getAddress(),masterNodePort);
+			
+			
+			OutputStream out = client.getOutputStream();
+			ObjectOutput objOut = new ObjectOutputStream(out);
+			
+			MasterControlMsg msg= new MasterControlMsg();
+			msg.type=MasterControlMsg.Type.TERMINATE;
+			
+			objOut.writeObject(msg);
+			
+			InputStream in = client.getInputStream();
+			ObjectInput objInput = new ObjectInputStream(in);
+			
+			objInput.readObject();
+	
+			client.close();
+		} catch (IOException e){
+			System.out.println("Unable to connect to Master");
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	public MapReduceState getStatus(){
+		Socket client;
+		MapReduceState resp=null;
+		try {
+			client = new Socket(masterLocation.getAddress(),masterNodePort);
+			
+			
+			OutputStream out = client.getOutputStream();
+			ObjectOutput objOut = new ObjectOutputStream(out);
+			
+			MasterControlMsg msg= new MasterControlMsg();
+			msg.type=MasterControlMsg.Type.QUERY;
+			
+			objOut.writeObject(msg);
+			
+			InputStream in = client.getInputStream();
+			ObjectInput objInput = new ObjectInputStream(in);
+			
+			resp = (MapReduceState) objInput.readObject();
+	
+			client.close();
+		} catch (IOException e){
+			System.out.println("Unable to connect to Master");
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return resp;
 	}
 	
 	public void configMapReduce(File configFile){
@@ -119,8 +183,7 @@ public class MapReduceManager {
 		BufferedReader br = null;
 		int replicationFactor=1;
 		int fileSplit = -1;
-		long heartbeat=10000;
-		long delay = 1000;
+		int numCores = 1;
 		dataFiles = new ArrayList<File>();
 		
 		try {
@@ -163,16 +226,12 @@ public class MapReduceManager {
 					dataFiles.add(new File(fname.trim()));
 				}else if(paramType.contains("REPLICATION")){
 					replicationFactor = Integer.parseInt(paramValue.trim());
-				}else if(paramType.contains("HEARTBEAT")){
-					heartbeat= Long.parseLong(paramValue.trim());
-				}else if(paramType.contains("DELAY")){
-					delay = Long.parseLong(paramValue.trim());
+				}else if(paramType.contains("CORES")){
+					numCores= Integer.parseInt(paramValue.trim());
 				}else if(paramType.contains("MAXFILESPLIT")){
 					fileSplit = Integer.parseInt(paramValue.trim());
 				}else {
-					System.out.println("Invalid configuration file, canceling initiation");
-					br.close();
-					return;
+					System.out.println("Unrecognized string " +paramType + " in config file");
 				}
 					
 			}
@@ -198,7 +257,7 @@ public class MapReduceManager {
 		try {
 			
 			Socket client = new Socket(masterLocation.getAddress(), masterLocation.getPort());
-			String message = "MASTER\n"+masterNodePort+"\n"+masterDFSPort+"\n"+heartbeat+"\n"+delay+"\n"+replicationFactor;
+			String message = "MASTER\n"+masterNodePort+"\n"+masterDFSPort+"\n"+replicationFactor + "\n" + numCores;
 			PrintWriter out = new PrintWriter(client.getOutputStream());
 			BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 			out.println(message);
@@ -222,7 +281,7 @@ public class MapReduceManager {
 			try {
 				Socket client = new Socket(p.getAddress(), p.getPort());
 				String message = "COMPUTE\n"+participantLocations.get(p)+"\n"+participantFileLocations.get(p)+"\n"+
-								masterLocation.getHostName()+"\n"+masterNodePort+"\n"+masterDFSPort+"\n";
+								masterLocation.getHostName()+"\n"+masterNodePort+"\n"+masterDFSPort+"\n" + numCores;
 				PrintWriter out = new PrintWriter(client.getOutputStream());
 				BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 				out.println(message);

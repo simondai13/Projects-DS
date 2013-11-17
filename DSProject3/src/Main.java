@@ -1,10 +1,7 @@
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+
 
 
 public class Main {
@@ -28,6 +25,19 @@ public class Main {
     	MapReduceManager mrm = new MapReduceManager();
     	mrm.configMapReduce(new File("testconfig.txt"));
     	mrm.startMapReduce(Histogram.class);
-    	//System.out.println(MapReducer.class);
+    	mrm.killMapReduce();
+    	if(!mrm.getStatus().isDone)
+    		System.out.println("STILL WORKING");
+    	
+    	try {
+			Thread.sleep(4000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	if(mrm.getStatus().isDone){
+    		System.out.println("Done");
+    		System.out.println(mrm.getStatus().activeJobs);
+    	}
     }
 }

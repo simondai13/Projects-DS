@@ -9,13 +9,14 @@ public class Scheduler {
 	private TreeMap<String,List<InetSocketAddress>> fileLocs;
 	private String[] mapFiles;
 	private List<InetSocketAddress> workNodes;
-    private TreeMap<InetSocketAddress,Task> initialTasks;
+    private TreeMap<InetSocketAddress,List<Task>> initialTasks;
     private List<Task> mapTasks;
     private List<Task> reduceTasks;
     private String mapReducer;
+    private int numCores;
 	
 	private int PID_Index;
-	public Scheduler(List<InetSocketAddress> workNodes, TreeMap<String,List<InetSocketAddress>> fileLocs, String mapReducer){
+	public Scheduler(List<InetSocketAddress> workNodes, TreeMap<String,List<InetSocketAddress>> fileLocs, String mapReducer,int numCores){
 		PID_Index=0;
 		mapFiles=new String[fileLocs.size()];
 		int i=0;
@@ -27,9 +28,14 @@ public class Scheduler {
 		this.workNodes=workNodes;
 		this.fileLocs=fileLocs;
 		this.mapReducer=mapReducer;
+		this.numCores=numCores;
 		mapTasks = new ArrayList<Task>();
 		reduceTasks = new ArrayList<Task>();
-		initialTasks = new TreeMap<InetSocketAddress,Task>(new NodeCompare());
+		initialTasks = new TreeMap<InetSocketAddress,List<Task>>(new NodeCompare());
+		for(InetSocketAddress addr: workNodes){
+			initialTasks.put(addr, new ArrayList<Task>());
+		}
+
 		//setup an initial schedule
 		synchronized(fileLocs){
 			bipartiteMatch();
@@ -42,8 +48,7 @@ public class Scheduler {
 		
 	} 
 	
-	public TreeMap<InetSocketAddress,Task> getInitialTasks(){
-		System.out.println(initialTasks);
+	public TreeMap<InetSocketAddress,List<Task>> getInitialTasks(){
 		return initialTasks;
 	}
 	
@@ -51,7 +56,7 @@ public class Scheduler {
 		if(!mapTasks.isEmpty()){
 			synchronized(fileLocs){
 				for(int i=0; i<mapTasks.size(); i++){
-					List<InetSocketAddress> locs =fileLocs.get(mapTasks.get(i));
+					List<InetSocketAddress> locs =fileLocs.get(mapTasks.get(i).file);
 					for(int j=0; i<locs.size(); j++){
 						if(node.equals(locs.get(i))){
 							Task result= mapTasks.get(i);
@@ -95,22 +100,22 @@ public class Scheduler {
 	{	
 		//Create an adjacency matrix from file locations, note it is not square because
 		//we need only consider edges in a single direction
-		boolean[][] adjMatrix = new boolean[mapFiles.length][workNodes.size()];
+		boolean[][] adjMatrix = new boolean[mapFiles.length][workNodes.size()*numCores];
 		for (int i=0; i<mapFiles.length; i++) {
-			for(int j=0; j<workNodes.size(); j++){
-				adjMatrix[i][j] = isEdge(mapFiles[i],workNodes.get(j));
+			for(int j=0; j<workNodes.size()*numCores; j++){
+				adjMatrix[i][j] = isEdge(mapFiles[i],workNodes.get(j/numCores));
 			}
 		}
 		
 		////Begin with M as the empty path
-		int[] M= new int[workNodes.size()];
+		int[] M= new int[workNodes.size()*numCores];
 	    for(int i=0; i<M.length; i++){
 	    	M[i]=-1;
 	    }
 	 
 	    for (int i = 0; i < mapFiles.length; i++)
 	    {
-	        boolean[] visited=new boolean[workNodes.size()];
+	        boolean[] visited=new boolean[workNodes.size()*numCores];
 	        augPath(adjMatrix,M,visited,i);
 	    }
 	    
@@ -118,7 +123,9 @@ public class Scheduler {
 
 	    for(int i=0; i<M.length; i++){
 	    	if(M[i]!=-1){
-	    		initialTasks.put(workNodes.get(i),new Task(PID_Index,Task.Type.MAP,mapFiles[M[i]],mapReducer));
+	    		System.out.println(initialTasks);
+	    		List<Task> tasks= initialTasks.get(workNodes.get(i/numCores));
+	    		tasks.add(new Task(PID_Index,Task.Type.MAP,mapFiles[M[i]],mapReducer));
 	    		PID_Index++;
 	    		taskedMaps[M[i]]=true;
 	    	}

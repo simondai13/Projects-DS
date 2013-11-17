@@ -49,10 +49,9 @@ public class SystemNode implements Runnable{
 						
 					int portnum = Integer.parseInt(in.readLine());
 					int dfsPort = Integer.parseInt(in.readLine());
-					long heartbeat = Long.parseLong(in.readLine());
-					long delay = Long.parseLong(in.readLine());
 					int replicationFactor = Integer.parseInt(in.readLine());
-					Master m= new Master(heartbeat, delay, portnum, dfsPort, replicationFactor);
+					int numCores = Integer.parseInt(in.readLine());
+					Master m= new Master(portnum, dfsPort, replicationFactor,numCores);
 					Thread t = new Thread(m);
 					t.start();
 					out.println("OK");
@@ -66,10 +65,11 @@ public class SystemNode implements Runnable{
 					InetAddress masterAdr = InetAddress.getByName(in.readLine());
 					int masterPort = Integer.parseInt(in.readLine());
 					int masterDFSPort = Integer.parseInt(in.readLine());
+					int numCores = Integer.parseInt(in.readLine());
 					DFSNode node = new DFSNode(new InetSocketAddress(masterAdr,masterDFSPort), filePortnum);
 					Thread t = new Thread(node);
 					t.start();
-					ComputeNode compute = new ComputeNode(portnum,new InetSocketAddress(masterAdr,masterPort),node);
+					ComputeNode compute = new ComputeNode(portnum,new InetSocketAddress(masterAdr,masterPort),node,numCores);
 					Thread tCompute = new Thread(compute);
 					tCompute.start();
 					out.println("OK");

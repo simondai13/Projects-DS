@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
 
 public class MasterDFS implements Runnable{
@@ -88,16 +89,18 @@ public class MasterDFS implements Runnable{
 				 //addresses
 				 }else if (line.contains("NEWFILEREQ")){
 					 
+					 System.out.println("WORKS");
 					 String filename = in.readLine();
-					 int r = (int) (Math.random() *master.activeFileNodes.size());
+					 int r = (int) (Math.random() *master.activeNodes.size());
 					 
 					 int j=replFactor-1; //We already have a copy on the FILEREQ node
 					 //it is possible we lost enough nodes that the replication factor can't be satisfied
 					 j=Math.min(j,master.activeNodes.size()-1);
 					 int i=0;
 					 while(i<j){
-						 InetSocketAddress n=master.activeFileNodes.get((r+i)%master.activeFileNodes.size());
-						 if(!n.equals((InetSocketAddress) client.getRemoteSocketAddress())){
+						 InetSocketAddress n=fileNodes.get((r+i)%fileNodes.size());
+						 if(!n.equals((InetSocketAddress) client.getRemoteSocketAddress()) &&
+							master.isActiveFileNode(n)){
 							out.println(n.getHostName());
 					     	out.println(n.getPort());
 						 }else{
