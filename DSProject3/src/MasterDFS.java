@@ -45,8 +45,8 @@ public class MasterDFS implements Runnable{
 				 String line = in.readLine();
 				 //node is receiving a request for a file
 				 if(line.contains("FILELOCATION")){
-					 
 					 String filename = in.readLine();
+					 System.out.println("FileLocation for" + filename);
 					 List<InetSocketAddress> locations = fileLocs.get(filename);
 					 String message = "";
 					 for(InetSocketAddress adr : locations){
@@ -58,17 +58,14 @@ public class MasterDFS implements Runnable{
 				 }
 				 //node is receiving a file
 				 else if(line.contains("NEWFILE")){
-					 
 					String filename = in.readLine();
-					
 					List<InetSocketAddress> locations = new ArrayList<InetSocketAddress>();
 					while((line=in.readLine())!=null){
-						
 						InetAddress hostadr = InetAddress.getByName(line);
 						int hostPort = Integer.parseInt(in.readLine());
 						locations.add(new InetSocketAddress(hostadr, hostPort));
 					}
-					System.out.println("Host made aware of Distributed file:"+ filename);
+					System.out.println("Host made aware of file:"+ filename);
 					fileLocs.put(filename, locations);
 				 //Node is requesting all locations so that the MapReduce.class can be copied to all nodes
 				 }else if (line.contains("NODELOCATIONS")){

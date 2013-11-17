@@ -25,7 +25,7 @@ public class Main {
     	MapReduceManager mrm = new MapReduceManager();
     	mrm.configMapReduce(new File("testconfig.txt"));
     	mrm.startMapReduce(Histogram.class);
-    	mrm.killMapReduce();
+    	//mrm.killMapReduce();
     	if(!mrm.getStatus().isDone)
     		System.out.println("STILL WORKING");
     	

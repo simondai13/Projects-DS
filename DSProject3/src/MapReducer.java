@@ -1,3 +1,5 @@
+import java.util.List;
+
 
 public interface MapReducer {
 	
@@ -5,7 +7,9 @@ public interface MapReducer {
 	public String map(String line);
 	
 	//User defined function to take an array of map outputs 
-	public String[] reduce(String[] lines);
+	public List<String> reduce(List<String> lines, String next);
 	
-
+	//User defined function to partition a record resulting from map
+	public int partition(String s);
+	
 }

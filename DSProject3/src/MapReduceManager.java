@@ -184,6 +184,7 @@ public class MapReduceManager {
 		int replicationFactor=1;
 		int fileSplit = -1;
 		int numCores = 1;
+		int numPartitions =1;
 		dataFiles = new ArrayList<File>();
 		
 		try {
@@ -228,6 +229,8 @@ public class MapReduceManager {
 					replicationFactor = Integer.parseInt(paramValue.trim());
 				}else if(paramType.contains("CORES")){
 					numCores= Integer.parseInt(paramValue.trim());
+				}else if(paramType.contains("PARTITIONS")){
+					numPartitions= Integer.parseInt(paramValue.trim());
 				}else if(paramType.contains("MAXFILESPLIT")){
 					fileSplit = Integer.parseInt(paramValue.trim());
 				}else {
@@ -257,7 +260,7 @@ public class MapReduceManager {
 		try {
 			
 			Socket client = new Socket(masterLocation.getAddress(), masterLocation.getPort());
-			String message = "MASTER\n"+masterNodePort+"\n"+masterDFSPort+"\n"+replicationFactor + "\n" + numCores;
+			String message = "MASTER\n"+masterNodePort+"\n"+masterDFSPort+"\n"+replicationFactor + "\n" + numCores + "\n" + numPartitions;
 			PrintWriter out = new PrintWriter(client.getOutputStream());
 			BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 			out.println(message);
@@ -281,7 +284,7 @@ public class MapReduceManager {
 			try {
 				Socket client = new Socket(p.getAddress(), p.getPort());
 				String message = "COMPUTE\n"+participantLocations.get(p)+"\n"+participantFileLocations.get(p)+"\n"+
-								masterLocation.getHostName()+"\n"+masterNodePort+"\n"+masterDFSPort+"\n" + numCores;
+								masterLocation.getHostName()+"\n"+masterNodePort+"\n"+masterDFSPort+"\n" + numCores +"\n" + numPartitions;
 				PrintWriter out = new PrintWriter(client.getOutputStream());
 				BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 				out.println(message);

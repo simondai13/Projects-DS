@@ -14,9 +14,11 @@ public class Scheduler {
     private List<Task> reduceTasks;
     private String mapReducer;
     private int numCores;
+    private int numPartitions;
+    public boolean initialMapsComplete;
 	
 	private int PID_Index;
-	public Scheduler(List<InetSocketAddress> workNodes, TreeMap<String,List<InetSocketAddress>> fileLocs, String mapReducer,int numCores){
+	public Scheduler(List<InetSocketAddress> workNodes, TreeMap<String,List<InetSocketAddress>> fileLocs, String mapReducer,int numCores,int numParts){
 		PID_Index=0;
 		mapFiles=new String[fileLocs.size()];
 		int i=0;
@@ -29,12 +31,14 @@ public class Scheduler {
 		this.fileLocs=fileLocs;
 		this.mapReducer=mapReducer;
 		this.numCores=numCores;
+		this.numPartitions=numParts;
 		mapTasks = new ArrayList<Task>();
 		reduceTasks = new ArrayList<Task>();
 		initialTasks = new TreeMap<InetSocketAddress,List<Task>>(new NodeCompare());
 		for(InetSocketAddress addr: workNodes){
 			initialTasks.put(addr, new ArrayList<Task>());
 		}
+		initialMapsComplete=false;
 
 		//setup an initial schedule
 		synchronized(fileLocs){
@@ -56,7 +60,7 @@ public class Scheduler {
 		if(!mapTasks.isEmpty()){
 			synchronized(fileLocs){
 				for(int i=0; i<mapTasks.size(); i++){
-					List<InetSocketAddress> locs =fileLocs.get(mapTasks.get(i).file);
+					List<InetSocketAddress> locs =fileLocs.get(mapTasks.get(i).files.get(0));
 					for(int j=0; i<locs.size(); j++){
 						if(node.equals(locs.get(i))){
 							Task result= mapTasks.get(i);
@@ -71,7 +75,7 @@ public class Scheduler {
 			mapTasks.remove(0);
 			return result;
 		}
-		else if(!reduceTasks.isEmpty()){
+		else if(!reduceTasks.isEmpty() && initialMapsComplete){
 			Task result= reduceTasks.get(0);
 			reduceTasks.remove(0);
 			return result;
@@ -79,6 +83,7 @@ public class Scheduler {
 		
 		return null;
 	}
+	
 	
 	public void addTask(Task t){
 		if(t.type==Task.Type.REDUCE)
@@ -125,7 +130,9 @@ public class Scheduler {
 	    	if(M[i]!=-1){
 	    		System.out.println(initialTasks);
 	    		List<Task> tasks= initialTasks.get(workNodes.get(i/numCores));
-	    		tasks.add(new Task(PID_Index,Task.Type.MAP,mapFiles[M[i]],mapReducer));
+	    		List<String> fs= new ArrayList<String>();
+	    		fs.add(mapFiles[M[i]]);
+	    		tasks.add(new Task(PID_Index,Task.Type.MAP,fs,mapReducer));
 	    		PID_Index++;
 	    		taskedMaps[M[i]]=true;
 	    	}
@@ -136,7 +143,9 @@ public class Scheduler {
 	    for(int i=0; i<taskedMaps.length; i++)
 	    {
 	    	if(!taskedMaps[i]){
-	    		mapTasks.add(new Task(PID_Index,Task.Type.MAP,mapFiles[i],mapReducer));
+	    		List<String> fs= new ArrayList<String>();
+	    		fs.add(mapFiles[i]);
+	    		mapTasks.add(new Task(PID_Index,Task.Type.MAP,fs,mapReducer));
 	    		PID_Index++;
 	    	}
 	    }
