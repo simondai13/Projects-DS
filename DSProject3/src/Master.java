@@ -20,7 +20,6 @@ import java.util.TreeSet;
 
 public class Master implements Runnable{
 	 
-	//private TreeMap<Long,StatusUpdate.Type> jobs;
 	//Map of node to currently executing tasks
 	//Keeps an array for parallel job execution
 	public Map<InetSocketAddress,List<Task>> jobs; 
@@ -30,16 +29,18 @@ public class Master implements Runnable{
 	public Map<InetSocketAddress,Integer> dfsPortToMRPort;
 	private int portNum;
 	private int numCores;
+	private int numPartitions;
 	private ServerSocket server;
 	private Scheduler scheduler;
 	private MasterDFS dfsMaster;
 	volatile boolean isDone;
 	volatile boolean mapCanceled;
 	
-	public Master(int port, int dfsPort,int replFactor,int numCores) throws IOException{
+	public Master(int port, int dfsPort,int replFactor,int numCores, int numPartions) throws IOException{
 		server=new ServerSocket(port);
 		portNum=port;
 		this.numCores=numCores;
+		this.numPartitions=numPartions;
 		
 		
 		jobs=new TreeMap<InetSocketAddress,List<Task>>(new NodeCompare());
@@ -65,7 +66,7 @@ public class Master implements Runnable{
 		isDone=false;
 		//Send in the full node array, not just the working ones, the master will
 		//sort out failed nodes
-		scheduler = new Scheduler(dfsMaster.fileNodes, dfsMaster.fileLocs,mapReduce,numCores);
+		scheduler = new Scheduler(dfsMaster.fileNodes, dfsMaster.fileLocs,mapReduce,numCores, numPartitions);
 		TreeMap<InetSocketAddress,List<Task>> tasks = scheduler.getInitialTasks();
 		for(Entry<InetSocketAddress,List<Task>> e :tasks.entrySet()){
 			jobs.put(new InetSocketAddress(e.getKey().getAddress(),dfsPortToMRPort.get(e.getKey())),new ArrayList<Task>());
@@ -118,15 +119,21 @@ public class Master implements Runnable{
 				done=false;
 			}
 		}
-		return done;
+		if(done && scheduler.initialMapsComplete)
+			return true;
+		else{
+			scheduler.initialMapsComplete=true;
+			return false;
+		}
 	}
 	
 	//Process a nodes status update and reacts accordingly
 	public void updateNodeStatus(StatusUpdate stat){
 			switch(stat.type)
 			{
-			case FAILED: //simply resend the task and hope it works 
-				sendTask(stat.task,stat.node);
+			case FAILED: //Might be a reduce task that failed because of map result lost, get the next task 
+				scheduler.addTask(stat.task);
+				sendTask(scheduler.getNextTask(stat.node),stat.node);
 				break;
 			case TERMINATED:
 				Task next= scheduler.getNextTask(stat.node);
@@ -151,8 +158,6 @@ public class Master implements Runnable{
 	
 	private void terminateAll(){
 		mapCanceled=true;
-		System.out.println("KILLING MAP REDUCE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-		System.out.println(jobs);
 		//Send messages to all workers to kill all active tasks
 		try{
 			for(Map.Entry<InetSocketAddress,List<Task>> e : jobs.entrySet()){
@@ -161,14 +166,12 @@ public class Master implements Runnable{
 					Socket client = new Socket(e.getKey().getAddress(),e.getKey().getPort());
 					OutputStream out = client.getOutputStream();
 					ObjectOutput objOut = new ObjectOutputStream(out);
-					System.out.println("SENDING KILL TASK");
 					InputStream in = client.getInputStream();
 					ObjectInput objIn = new ObjectInputStream(in);
 					KillTask kt = new KillTask();
 					kt.PID=t.PID;
 					
 					objOut.writeObject(kt);
-					System.out.println("KILLTASK SENT");
 					client.close();
 				}
 			}

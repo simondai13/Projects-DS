@@ -11,6 +11,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -19,6 +20,7 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -33,12 +35,13 @@ public class ComputeNode implements Runnable{
 	private DFSNode dfs;
 	private int portnum;
 	private int numCores;
+	private int numPartitions;
 	//Simple data structure that does not need to be locked,
 	//so it can be quickly checked each iteration of the map/reduce task
 	volatile boolean[] killTask; 
 	Map<Integer,Integer> pidToCore;
 	
-	public ComputeNode(int portnum, InetSocketAddress master,DFSNode dfs, int numCores) throws IOException{
+	public ComputeNode(int portnum, InetSocketAddress master,DFSNode dfs, int numCores, int numParts) throws IOException{
 		this.portnum=portnum;
 		this.master=master;
 		this.numCores=numCores;
@@ -46,6 +49,7 @@ public class ComputeNode implements Runnable{
 		this.dfs=dfs;
 		killTask=new boolean[numCores];
 		pidToCore=new TreeMap<Integer,Integer>();
+		numPartitions=numParts;
 	}
 	
 	private class Heartbeat extends TimerTask {
@@ -84,7 +88,6 @@ public class ComputeNode implements Runnable{
 				 InputStream in = client.getInputStream();
 				 ObjectInput objIn = new ObjectInputStream(in);
 				 Object obj = objIn.readObject();
-				 System.out.println("WORKS3");
 				 
 				 //Make sure this message is packed properly
 				 if(Task.class.isAssignableFrom(obj.getClass()))
@@ -95,7 +98,6 @@ public class ComputeNode implements Runnable{
 				 }
 				 else if(KillTask.class.isAssignableFrom(obj.getClass())){
 					 KillTask kt = (KillTask) obj;
-					 System.out.println("WORKSSDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 					 synchronized(pidToCore){
 						 if(pidToCore.containsKey(kt.PID)){
 							 int i = pidToCore.get(kt.PID);
@@ -171,49 +173,91 @@ public class ComputeNode implements Runnable{
 		
 		
 			 System.out.println("Task " + t.PID + " Started");
-			 File input=new File(t.file);
-			 if(!input.exists()){
-				 input = DFSUtil.getFile(this.dfs.masterLoc, t.file);
-			 }
-			 
-			 File output = new File(t.PID + "-output.tmp");
-			 BufferedWriter bw = new BufferedWriter(new FileWriter(output));
-			 BufferedReader br = new BufferedReader(new FileReader(input));
 			 
 			 String mapline;
 			if(t.type==Task.Type.MAP){
+				 File input= DFSUtil.getFile(this.dfs.masterLoc, t.files.get(0),dfs.fileFolder);
+				 if(input == null){
+					 sendTaskFinish(t,StatusUpdate.Type.FAILED);
+				 }
+				 
+				 
+				 File outputs[] = new File[numPartitions];
+				 BufferedWriter bws[] = new BufferedWriter[numPartitions];
+				 for(int i =0; i<numPartitions; i++){
+					 outputs[i]=new File(dfs.fileFolder + "/tmp/" + t.PID + "-output-" + i+ ".txt");
+					 bws[i]=new BufferedWriter(new FileWriter(outputs[i]));
+					 DFSUtil.createLocalFile(this.dfs.masterLoc, 
+							 	new InetSocketAddress(InetAddress.getLocalHost(),this.dfs.portNumber),"/tmp/" + t.PID + "-output-" + i+ ".txt");
+				 }
+				 
+				 BufferedReader br = new BufferedReader(new FileReader(input));
+				 
 				while((line = br.readLine()) != null && !killTask[coreNum]){
 					mapline=mr.map(line);
 					if(mapline!=null)
 					{
-						bw.write(mapline);
-						bw.newLine();
+						BufferedReader bufReader = new BufferedReader(new StringReader(mapline));
+						String maplineout=null;
+						while( (maplineout=bufReader.readLine()) != null )
+						{
+							int part= mr.partition(maplineout);
+							if(part>numPartitions || numPartitions<0){
+								part=0;
+								System.out.println("Invalid partion, placing at 0");
+							}
+							
+							bws[part].write(maplineout);
+							bws[part].newLine();
+						}
 					}
 				}
+				for(int i=0; i<bws.length; i++){
+					bws[i].close();
+				}
+				br.close();
 			}
 			else {
-				String[] mapInput = new String[2];
-				String[] mapOutput = new String[2];
-				mapOutput[1] = br.readLine();
-				mapOutput[0] = null;
-				while((line = br.readLine()) !=null && !killTask[coreNum]){
-					mapInput[0]=mapOutput[1];
-					mapInput[1]=line;
-					mapOutput = mr.reduce(mapInput);
-					
-					if(mapOutput[0]!=null){
-						bw.write(mapOutput[0]);
-						bw.newLine();
-					}
-				}
+				File inputs[] = new File[numPartitions];
+				BufferedReader brs[] = new BufferedReader[numPartitions];
 				
-				if(mapOutput[1]!=null)
-					bw.write(mapOutput[1]);
-				
+				boolean missingFile=false;
+				 for(int i =0; i<t.files.size(); i++){
+					 inputs[i]=DFSUtil.getFile(this.dfs.masterLoc, t.files.get(i),dfs.fileFolder);
+					 //This means that 1 of the map results are lost, we just have to back out to make sure nodes are
+					 //Available to service the map
+					 if(inputs[i]==null){
+						 sendTaskFinish(t,StatusUpdate.Type.FAILED);
+						 return;
+					 }
+				 }
+				 line=null;
+				 List<String> records = new ArrayList<String>();
+				 File out= new File(dfs.fileFolder +"/" + "result-" + t.PID + ".txt");
+				 BufferedWriter bw=new BufferedWriter(new FileWriter(out));
+				 
+				 for(int i=0; i<brs.length; i++){
+					 brs[i]=new BufferedReader(new FileReader(inputs[i]));
+					 
+					 while((line = brs[i].readLine()) !=null && !killTask[coreNum]){
+							
+							records = mr.reduce(records,line);
+					 }	
+				 }
+
+				 for(int i=0; i<)
+				 bw.write(mapOutput[1]);
+				 
+				 for(int i=0; i<brs.length; i++){
+					 brs[i].close();
+				 }
+				 bw.close();
+				 
+				 dfs.distributeFile("result-" + t.PID + ".txt");
+				 
 			}
-			
-			br.close();
-			bw.close();
+				
+		
 		 } catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

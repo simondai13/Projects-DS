@@ -22,11 +22,22 @@ public class DFSNode implements Runnable{
 	private ServerSocket server;
 	public InetSocketAddress masterLoc;
 	public MapReducer mr;
+	public int portNumber;
+	String fileFolder;
 	
 	public DFSNode(InetSocketAddress masterLoc, int portnum) throws IOException{
 		
 		server = new ServerSocket(portnum);
 		this.masterLoc = masterLoc;
+		this.portNumber=portnum;
+		fileFolder=String.valueOf(portnum);
+		File f = new File(fileFolder);
+		if(!f.exists())
+			f.mkdir();
+		File f2 = new File(fileFolder+"/tmp");
+		if(!f2.exists())
+			f2.mkdir();
+		
 	}
 	
 	//Distribute a file over the specified nodes
@@ -68,7 +79,7 @@ public class DFSNode implements Runnable{
 			try {
 				s = new Socket(d.getAddress(), d.getPort());
 				PrintWriter out = new PrintWriter(s.getOutputStream());
-				DFSUtil.sendFile(out, filename);
+				DFSUtil.sendFile(out, filename,fileFolder);
 				out.close();
 				s.close();
 			} catch (IOException e) {
@@ -85,25 +96,15 @@ public class DFSNode implements Runnable{
 	}
 	
 	private File getFile(String filename){
-		
-		File f = new File(filename);
-		File f2 = new File("tmp/"+filename);
-		
-		if(!f.exists() && !f2.exists()){
-			
-			//get temp copy
-			try {
-				return DFSUtil.getFile(masterLoc, filename);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		File f=null;
+		try {
+			f= DFSUtil.getFile(masterLoc, filename, fileFolder);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		
-		if(f.exists())
-			return f;
-		
-		return f2;
+		return f;
 	}
 	
 	private class ConnectionHandle implements Runnable {
@@ -124,17 +125,15 @@ public class DFSNode implements Runnable{
 				 if(line.contains("FILEREQUEST")){
 					 
 					 String filename = in.readLine();
-					 DFSUtil.sendFile(out, filename);
+					 DFSUtil.sendFile(out, filename, fileFolder);
 				 }
 				 //node is receiving a file
 				 else if(line.contains("FILESEND") || line.contains("CLASSFILE")){
 					 
 					String filename = in.readLine();
 					File f = new File(filename);
-					if(!f.createNewFile()){
-						//fail
-					}
-					PrintWriter fileWriter = new PrintWriter(f);
+					f.createNewFile();
+					PrintWriter fileWriter = new PrintWriter(fileFolder+ "/"+ f);
 					String fileLine = "";
 					while((fileLine = in.readLine()) != null){
 						
@@ -156,8 +155,6 @@ public class DFSNode implements Runnable{
 	
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-
 		while(true) {
 			try {
 				Socket client = server.accept();
