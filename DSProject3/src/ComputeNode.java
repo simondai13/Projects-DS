@@ -51,12 +51,14 @@ public class ComputeNode implements Runnable{
 		@Override
 		public void run() {
 			try{ 
+				System.out.println("WORKS2");
 				 OutputStream out = client.getOutputStream();
 				 ObjectOutput objOut = new ObjectOutputStream(out);
 				 
 				 InputStream in = client.getInputStream();
 				 ObjectInput objIn = new ObjectInputStream(in);
 				 Object obj = objIn.readObject();
+				 System.out.println("WORKS3");
 				 
 				 //Make sure this message is packed properly
 				 if(Task.class.isAssignableFrom(obj.getClass()))
@@ -67,7 +69,7 @@ public class ComputeNode implements Runnable{
 				 }
 				 
 				 //Simply send a dummy message back to the master affirming we got this task
-				 objOut.writeObject(obj);
+				 //objOut.writeObject(obj);
 
 			 } catch (IOException e) {
 				 
@@ -153,10 +155,12 @@ public class ComputeNode implements Runnable{
 				lines.toArray(lineArray);
 				String[] resultLines= mr.reduce(lineArray);
 				
-				//This should be changed to write to the distributed system
-				for(int i=0; i<resultLines.length; i++){
-					bw.write(lineArray[i]);
-					bw.newLine();
+				if(resultLines!=null){
+					//This should be changed to write to the distributed system
+					for(int i=0; i<resultLines.length; i++){
+						bw.write(lineArray[i]);
+						bw.newLine();
+					}
 				}
 				
 			}
