@@ -10,12 +10,6 @@ public class MaxValue implements MapReducer{
 		return line;
 	}
 
-	@Override
-	public String[] reduce(String[] lines) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	public List<String> reduce(List<String> lines, String line) {
 
 		if(lines.isEmpty()){
@@ -37,6 +31,12 @@ public class MaxValue implements MapReducer{
 		}
 
 		return lines;
+	}
+
+	@Override
+	public int partition(String s) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 	
