@@ -239,7 +239,7 @@ public class ComputeNode implements Runnable{
 					 BufferedReader br =new BufferedReader(new FileReader(inputs[i]));
 					 while((line = br.readLine()) !=null && !killTask[coreNum]){
 						 System.out.println(line);
-							//records = mr.reduce(records,line);
+							records = mr.reduce(records,line);
 					 }
 					 br.close();
 				 }
