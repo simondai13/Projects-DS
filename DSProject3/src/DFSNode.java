@@ -125,9 +125,16 @@ public class DFSNode implements Runnable{
 				 String line = in.readLine();
 				 //node is receiving a request for a file
 				 if(line!=null && line.contains("FILEREQUEST")){
-					 String filename = in.readLine();
-					 System.out.println("got request for" + filename);
-					 DFSUtil.sendFile(out, filename, fileFolder);
+					 	String filename = in.readLine();
+					 	System.out.println("got request for" + filename);
+						//reads the file, writes it to destination
+						BufferedReader inFile = new BufferedReader(new FileReader(fileFolder + "/" + filename));
+						while((line = inFile.readLine()) != null){
+							
+							out.println(line);
+						}
+						out.flush();
+						inFile.close();
 				 }
 				 //node is receiving a file
 				 else if(line!=null && (line.contains("FILESEND") || line.contains("CLASSFILE"))){
