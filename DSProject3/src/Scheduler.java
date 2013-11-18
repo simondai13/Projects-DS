@@ -45,8 +45,12 @@ public class Scheduler {
 			bipartiteMatch();
 		}
 		//Simply add a reduce task for each file
-		for(i=0; i<mapFiles.length; i++){
-			reduceTasks.add(new Task(PID_Index,Task.Type.REDUCE,mapFiles[i],mapReducer));
+		for(i=0; i<numParts; i++){
+			List<String> files = new ArrayList<String>();
+			for(int j=0; j<mapFiles.length; j++){
+				files.add("tmp/" + j + "-output-" + i +".txt");
+			}
+			reduceTasks.add(new Task(PID_Index,Task.Type.REDUCE,files,mapReducer));
 			PID_Index++;
 		}
 		

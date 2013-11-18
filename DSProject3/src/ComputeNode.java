@@ -187,8 +187,6 @@ public class ComputeNode implements Runnable{
 				 for(int i =0; i<numPartitions; i++){
 					 outputs[i]=new File(dfs.fileFolder + "/tmp/" + t.PID + "-output-" + i+ ".txt");
 					 bws[i]=new BufferedWriter(new FileWriter(outputs[i]));
-					 DFSUtil.createLocalFile(this.dfs.masterLoc, 
-							 	new InetSocketAddress(InetAddress.getLocalHost(),this.dfs.portNumber),"/tmp/" + t.PID + "-output-" + i+ ".txt");
 				 }
 				 
 				 BufferedReader br = new BufferedReader(new FileReader(input));
@@ -213,15 +211,16 @@ public class ComputeNode implements Runnable{
 					}
 				}
 				for(int i=0; i<bws.length; i++){
+					DFSUtil.createLocalFile(this.dfs.masterLoc, 
+						 	new InetSocketAddress(InetAddress.getLocalHost(),this.dfs.portNumber),"tmp/" + t.PID + "-output-" + i+ ".txt");
 					bws[i].close();
 				}
 				br.close();
 			}
 			else {
-				File inputs[] = new File[numPartitions];
+				File inputs[] = new File[t.files.size()];
 				BufferedReader brs[] = new BufferedReader[numPartitions];
 				
-				boolean missingFile=false;
 				 for(int i =0; i<t.files.size(); i++){
 					 inputs[i]=DFSUtil.getFile(this.dfs.masterLoc, t.files.get(i),dfs.fileFolder);
 					 //This means that 1 of the map results are lost, we just have to back out to make sure nodes are
@@ -240,19 +239,20 @@ public class ComputeNode implements Runnable{
 					 brs[i]=new BufferedReader(new FileReader(inputs[i]));
 					 
 					 while((line = brs[i].readLine()) !=null && !killTask[coreNum]){
-							
 							records = mr.reduce(records,line);
 					 }	
 				 }
 
-				 for(int i=0; i<)
-				 bw.write(mapOutput[1]);
+				 for(String r : records){
+					 bw.write(r);
+					 bw.newLine();
+				 }
 				 
 				 for(int i=0; i<brs.length; i++){
 					 brs[i].close();
 				 }
 				 bw.close();
-				 
+				 System.out.println("HELLLLLLLLLLLLLLLLLLLLLO");
 				 dfs.distributeFile("result-" + t.PID + ".txt");
 				 
 			}

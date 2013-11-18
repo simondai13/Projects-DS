@@ -22,6 +22,7 @@ public class Histogram implements MapReducer {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		lines.add(line);
 		return lines;
 	}
 	

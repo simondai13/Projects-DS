@@ -19,7 +19,7 @@ public class MaxValue implements MapReducer{
 		}
 		
 		String l = lines.get(0);
-		int comparison = l.compareTo(line);
+		int comparison = Integer.parseInt(l.trim()) - Integer.parseInt(line.trim());
 		if(comparison == 0){
 		
 			lines.add(l);

@@ -48,12 +48,14 @@ public class DFSNode implements Runnable{
 			PrintWriter out = new PrintWriter(master.getOutputStream());
 			BufferedReader in = new BufferedReader(new InputStreamReader(master.getInputStream()));
 			out.println("NEWFILEREQ\n" + filename);
+			out.flush();
 			String res="";
+			System.out.println("WHAT");
 			while((res=in.readLine())!=null){
 				int port = Integer.parseInt(in.readLine());
 				destinations.add(new InetSocketAddress(res,port));
 			}
-			
+			System.out.println("Works");
 			in.close();
 			out.close();
 			master.close();
@@ -71,7 +73,7 @@ public class DFSNode implements Runnable{
 	
 	//assume local file exists, makes it distributed
 	public void distributeFile(String filename, List<InetSocketAddress> destinations){
-		
+		System.out.println("Sending file around to " + destinations);
 		//send copies to appropriate nodes
 		for(InetSocketAddress d : destinations){
 			
@@ -122,13 +124,13 @@ public class DFSNode implements Runnable{
 				 
 				 String line = in.readLine();
 				 //node is receiving a request for a file
-				 if(line.contains("FILEREQUEST")){
-					 
+				 if(line!=null && line.contains("FILEREQUEST")){
 					 String filename = in.readLine();
+					 System.out.println("got request for" + filename);
 					 DFSUtil.sendFile(out, filename, fileFolder);
 				 }
 				 //node is receiving a file
-				 else if(line.contains("FILESEND") || line.contains("CLASSFILE")){
+				 else if(line!=null && (line.contains("FILESEND") || line.contains("CLASSFILE"))){
 					 
 					String filename = in.readLine();
 					File f = new File(filename);

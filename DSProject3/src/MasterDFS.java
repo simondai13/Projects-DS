@@ -43,21 +43,24 @@ public class MasterDFS implements Runnable{
 				 BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 				 
 				 String line = in.readLine();
+
 				 //node is receiving a request for a file
 				 if(line.contains("FILELOCATION")){
 					 String filename = in.readLine();
 					 System.out.println("FileLocation for" + filename);
 					 List<InetSocketAddress> locations = fileLocs.get(filename);
 					 String message = "";
-					 for(InetSocketAddress adr : locations){
-						 message += adr.getHostName()+"\n";
-						 message += adr.getPort()+"\n";
+					 if(locations!=null){
+						 for(InetSocketAddress adr : locations){
+							 message += adr.getHostName()+"\n";
+							 message += adr.getPort()+"\n";
+						 }
 					 }
-					 
 					 out.print(message);
+					 out.flush();
 				 }
 				 //node is receiving a file
-				 else if(line.contains("NEWFILE")){
+				 else if(line.contains("NEWFILE") && !line.contains("REQ")){
 					String filename = in.readLine();
 					List<InetSocketAddress> locations = new ArrayList<InetSocketAddress>();
 					while((line=in.readLine())!=null){
@@ -86,27 +89,32 @@ public class MasterDFS implements Runnable{
 				 //addresses
 				 }else if (line.contains("NEWFILEREQ")){
 					 
-					 System.out.println("WORKS");
+					 System.out.println("WORKS777777777777777777777777777");
 					 String filename = in.readLine();
 					 int r = (int) (Math.random() *master.activeNodes.size());
-					 
+					 System.out.println("WORKS777777777777777777777773q43477");
 					 int j=replFactor-1; //We already have a copy on the FILEREQ node
 					 //it is possible we lost enough nodes that the replication factor can't be satisfied
 					 j=Math.min(j,master.activeNodes.size()-1);
 					 int i=0;
+					 List<InetSocketAddress> newLocs = new ArrayList<InetSocketAddress>();
+					 System.out.println("B$444444444444444444");
 					 while(i<j){
 						 InetSocketAddress n=fileNodes.get((r+i)%fileNodes.size());
 						 if(!n.equals((InetSocketAddress) client.getRemoteSocketAddress()) &&
 							master.isActiveFileNode(n)){
 							out.println(n.getHostName());
 					     	out.println(n.getPort());
+					     	newLocs.add(n);
 						 }else{
 							j++;
 						 }
 						 
 						 i++;
 					 }
-					 
+					 System.out.println("l888888888888");
+					 out.flush();
+					 fileLocs.put(filename, newLocs);
 				 }
 				 
 				 out.close();

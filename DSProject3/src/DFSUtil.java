@@ -53,16 +53,17 @@ public class DFSUtil {
 				Socket fileReq = new Socket(fileLoc.getHostName(), fileLoc.getPort());
 				BufferedReader in = new BufferedReader(new InputStreamReader(fileReq.getInputStream()));
 				PrintWriter out = new PrintWriter(fileReq.getOutputStream());
-				
+				System.out.println("getting file");
 				out.write(message);
-				File tempCopy = new File(folder +"/tmp/"+filename);
+				out.flush();
+				File tempCopy = new File(folder +"/tmp/"+filename.substring(0,filename.lastIndexOf("/")));
 				tempCopy.createNewFile();
 				String line="";
 				PrintWriter out2 = new PrintWriter(new FileWriter(tempCopy));
-				while((line=in.readLine())!=null){
-					
+				while((line=in.readLine())!=null){	
 					out2.println(line);
 				}
+				System.out.println("Got file");
 				out2.flush();
 				fileReq.close();
 				in.close();
@@ -70,6 +71,7 @@ public class DFSUtil {
 				out2.close();
 				return tempCopy;
 			} catch (IOException e) {
+				e.printStackTrace();
 				//try next host
 			}
 		}
