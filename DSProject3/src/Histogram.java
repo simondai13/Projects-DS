@@ -17,7 +17,7 @@ public class Histogram implements MapReducer {
 	@Override
 	public List<String> reduce(List<String> lines, String line) {
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(300);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

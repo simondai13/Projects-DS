@@ -68,8 +68,10 @@ public class Master implements Runnable{
 		//sort out failed nodes
 		scheduler = new Scheduler(dfsMaster.fileNodes, dfsMaster.fileLocs,mapReduce,numCores, numPartitions);
 		TreeMap<InetSocketAddress,List<Task>> tasks = scheduler.getInitialTasks();
-		for(Entry<InetSocketAddress,List<Task>> e :tasks.entrySet()){
-			jobs.put(new InetSocketAddress(e.getKey().getAddress(),dfsPortToMRPort.get(e.getKey())),new ArrayList<Task>());
+		synchronized(jobs){
+			for(Entry<InetSocketAddress,List<Task>> e :tasks.entrySet()){
+				jobs.put(new InetSocketAddress(e.getKey().getAddress(),dfsPortToMRPort.get(e.getKey())),new ArrayList<Task>());
+			}
 		}
 		for(Entry<InetSocketAddress,List<Task>> e :tasks.entrySet())
 		{	
@@ -84,39 +86,40 @@ public class Master implements Runnable{
 		@Override
 		public void run() {
 			synchronized(jobs) {
-				synchronized (activeNodes)
-				 {
-					for (Entry<InetSocketAddress,Boolean> entry : nodeStatus.entrySet())
+				for (Entry<InetSocketAddress,Boolean> entry : nodeStatus.entrySet())
+				{
+					if(!entry.getValue()  &&activeNodes.contains(entry.getKey()))
 					{
-						if(!entry.getValue()  &&activeNodes.contains(entry.getKey()))
-						{
-							handleFailure(entry.getKey());
-							System.out.println("Lost connection to: " + entry.getKey().getAddress()+ "attempting recovery");
-						}
-						entry.setValue(false);
+						handleFailure(entry.getKey());
+						System.out.println("Lost connection to: " + entry.getKey().getAddress()+ "attempting recovery");
 					}
-				 }
+					entry.setValue(false);
+				}
 			}
 			
 		}
 	}
 	
 	public void handleFailure(InetSocketAddress node){
-		List<Task> tasks= jobs.get(node);
-		for(Task t: tasks){
-			scheduler.addTask(t);
+		synchronized(jobs){
+			List<Task> tasks= jobs.get(node);
+			for(Task t: tasks){
+				scheduler.addTask(t);
+			}
+			jobs.put(node, new ArrayList<Task>());
+			activeNodes.remove(node);
 		}
-		jobs.put(node, new ArrayList<Task>());
-		activeNodes.remove(node);
 	}
 	
 	//This method is called after a task completes and the scheduler has no new tasks,
 	//Check to make sure all running jobs are complete
 	public boolean checkIsCompleted(){
 		boolean done=true;
-		for(List<Task> tasks : jobs.values()){
-			if(!tasks.isEmpty()){
-				done=false;
+		synchronized(jobs){
+			for(List<Task> tasks : jobs.values()){
+				if(!tasks.isEmpty()){
+					done=false;
+				}
 			}
 		}
 		if(done && scheduler.initialMapsComplete)
@@ -137,13 +140,15 @@ public class Master implements Runnable{
 				break;
 			case TERMINATED:
 				Task next= scheduler.getNextTask(stat.node);
-				List<Task> tasks= jobs.get(stat.node);
-				int taskIndex=0;
-				for(int i=0; i< tasks.size(); i++){
-					if(tasks.get(i).PID ==stat.task.PID)
-						taskIndex=i;
+				synchronized(jobs){
+					List<Task> tasks= jobs.get(stat.node);
+					int taskIndex=0;
+					for(int i=0; i< tasks.size(); i++){
+						if(tasks.get(i).PID ==stat.task.PID)
+							taskIndex=i;
+					}
+					tasks.remove(taskIndex);
 				}
-				tasks.remove(taskIndex);
 				
 				if(next!=null)
 					sendTask(next,stat.node);
@@ -160,6 +165,7 @@ public class Master implements Runnable{
 		mapCanceled=true;
 		//Send messages to all workers to kill all active tasks
 		try{
+			synchronized(jobs){
 			for(Map.Entry<InetSocketAddress,List<Task>> e : jobs.entrySet()){
 				List<Task> tasks = e.getValue();
 				for(Task t: tasks){
@@ -175,13 +181,16 @@ public class Master implements Runnable{
 					client.close();
 				}
 			}
+			}
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
 		
 		//Clear the jobs
-		for(Map.Entry<InetSocketAddress, List<Task>> j : jobs.entrySet()){
-			jobs.put(j.getKey(), new ArrayList<Task>());
+		synchronized(jobs){
+			for(Map.Entry<InetSocketAddress, List<Task>> j : jobs.entrySet()){
+				jobs.put(j.getKey(), new ArrayList<Task>());
+			}
 		}
 		isDone = true;
 	}
@@ -283,12 +292,14 @@ public class Master implements Runnable{
 					 		break;
 					 	case QUERY:
 					 		MapReduceState resp = new MapReduceState();
-					 		resp.activeJobs=jobs;
-					 		resp.activeNodes=activeNodes;
-					 		resp.fileLocs=dfsMaster.fileLocs;
-					 		resp.isDone=isDone;
-					 		
-							objOut.writeObject(resp);
+					 		synchronized(jobs){
+						 		resp.activeJobs=jobs;
+						 		resp.activeNodes=activeNodes;
+						 		resp.fileLocs=dfsMaster.fileLocs;
+						 		resp.isDone=isDone;
+						 		
+								objOut.writeObject(resp);
+					 		}
 							break;
 					 	default:
 					 		break;

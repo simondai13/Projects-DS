@@ -80,7 +80,8 @@ public class SystemNode implements Runnable{
 				}
 			}catch(IOException e){
 				e.printStackTrace();
-				out.println("FAIL");			}
+				out.println("FAIL");			
+			}
 			
 		}
 	}
