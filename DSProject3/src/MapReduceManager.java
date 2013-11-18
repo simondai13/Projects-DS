@@ -42,6 +42,7 @@ public class MapReduceManager {
 		masterDFSPort=0;
 	}
 	public void startMapReduce(final Class<?> pClass){
+		System.out.println("\n==Starting a map reduce==\n");
 	    final String location, name;
 	    name = pClass.getName().replaceAll("\\.", "/") + ".class";
 	    location = ClassLoader.getSystemResource(name).getPath();

@@ -20,4 +20,4 @@ COMPUTEPORT = 2354
 COMPUTEDFSPORT = 2355
 REPLICATION = 2
 PARTITIONS = 2
-DATAFILE = C:\Users\Kenny\git\Projects-DS\DSProject3\TestWords.txt
+DATAFILE = TestWords.txt

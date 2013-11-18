@@ -73,7 +73,7 @@ public class DFSNode implements Runnable{
 	
 	//assume local file exists, makes it distributed
 	public void distributeFile(String filename, List<InetSocketAddress> destinations){
-		System.out.println("Sending file around to " + destinations);
+		System.out.println("Sending file " + filename + " around to " + destinations);
 		//send copies to appropriate nodes
 		for(InetSocketAddress d : destinations){
 			

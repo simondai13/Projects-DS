@@ -81,7 +81,6 @@ public class ComputeNode implements Runnable{
 		@Override
 		public void run() {
 			try{ 
-				System.out.println("WORKS2");
 				 OutputStream out = client.getOutputStream();
 				 ObjectOutput objOut = new ObjectOutputStream(out);
 				 
@@ -101,7 +100,6 @@ public class ComputeNode implements Runnable{
 					 synchronized(pidToCore){
 						 if(pidToCore.containsKey(kt.PID)){
 							 int i = pidToCore.get(kt.PID);
-							 System.out.println("Killing task " + kt.PID);
 							 killTask[i]=true;
 						 }
 					 }
@@ -122,7 +120,6 @@ public class ComputeNode implements Runnable{
 			Socket client = new Socket(master.getAddress(),master.getPort());
 			OutputStream out = client.getOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(out);
-			System.out.println("WORKS");
 			objOut.writeObject(new StatusUpdate(t, type, new InetSocketAddress(InetAddress.getLocalHost(),portnum)));
 			
 			client.close();
@@ -172,7 +169,7 @@ public class ComputeNode implements Runnable{
 			mr.equals(mr);
 		
 		
-			 System.out.println("Task " + t.PID + " Started");
+			 System.out.println("Task " + t.PID + " of type " + t.type + " Started");
 			 
 			 String mapline;
 			if(t.type==Task.Type.MAP){
@@ -249,7 +246,6 @@ public class ComputeNode implements Runnable{
 					 bw.newLine();
 				 }
 				 bw.close();
-				 System.out.println("HELLLLLLLLLLLLLLLLLLLLLO");
 				 dfs.distributeFile("result-" + t.PID + ".txt");
 				 
 			}
@@ -285,7 +281,6 @@ public class ComputeNode implements Runnable{
 		while(true) {
 			try {
 				Socket client = server.accept();
-				System.out.println("GOT Communication");
 				//Generate a connection handle and run it in a 
 				//separate thread
 				ConnectionHandle ch = new ConnectionHandle(client);

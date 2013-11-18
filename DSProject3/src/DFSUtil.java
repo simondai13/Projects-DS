@@ -64,10 +64,9 @@ public class DFSUtil {
 				String line="";
 				PrintWriter out2 = new PrintWriter(new FileWriter(tempCopy));
 				while((line=in.readLine())!=null){
-					System.out.println(line + " SDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 					out2.println(line);
 				}
-				System.out.println("Got file");
+				System.out.println("File " + filename + " successfully recieved");
 				out2.flush();
 				fileReq.close();
 				in.close();

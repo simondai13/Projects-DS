@@ -26,7 +26,6 @@ public class Scheduler {
 			mapFiles[i]=e.getKey();
 			i++;
 		}
-		System.out.println(mapFiles.length);
 		this.workNodes=workNodes;
 		this.fileLocs=fileLocs;
 		this.mapReducer=mapReducer;
@@ -132,7 +131,6 @@ public class Scheduler {
 
 	    for(int i=0; i<M.length; i++){
 	    	if(M[i]!=-1){
-	    		System.out.println(initialTasks);
 	    		List<Task> tasks= initialTasks.get(workNodes.get(i/numCores));
 	    		List<String> fs= new ArrayList<String>();
 	    		fs.add(mapFiles[M[i]]);
@@ -186,11 +184,9 @@ public class Scheduler {
 	//Helper function to find if there is an edge between 
 	//file and address (ie the file is at the address)
 	private boolean isEdge(String file, InetSocketAddress addr){
-		System.out.println(addr);
 		List<InetSocketAddress> locs=fileLocs.get(file);
 		if(locs == null)
 			return false;
-		System.out.println(fileLocs.get(file));
 		
 		for(int i=0; i<locs.size(); i++){
 			if(locs.get(i).equals(addr))
