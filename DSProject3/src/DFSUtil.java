@@ -80,6 +80,7 @@ public class DFSUtil {
 		return null;
 	}
 	
+	//makes a local file
 	public static void createLocalFile(InetSocketAddress masterLoc, InetSocketAddress localAddr, String filename) throws IOException{
 		
 		Socket master = new Socket(masterLoc.getHostName(), masterLoc.getPort());
@@ -94,6 +95,7 @@ public class DFSUtil {
 		master.close();
 	}
 	
+	//sends a file to another node
 	public static void sendFile(PrintWriter out, String filename, String folder, String tag) throws IOException {
 		String message = tag + "\n"+filename+"\n";
 		

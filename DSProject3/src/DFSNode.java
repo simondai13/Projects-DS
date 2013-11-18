@@ -95,6 +95,7 @@ public class DFSNode implements Runnable{
 		return new BufferedReader(new FileReader(getFile(filename)));
 	}
 	
+	//obtains a file specified by filename
 	private File getFile(String filename){
 		File f=null;
 		try {
@@ -107,6 +108,7 @@ public class DFSNode implements Runnable{
 		return f;
 	}
 	
+	//handles other DFSNode's file queries
 	private class ConnectionHandle implements Runnable {
 		private Socket client;
 		

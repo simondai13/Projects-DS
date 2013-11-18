@@ -52,6 +52,7 @@ public class ComputeNode implements Runnable{
 		numPartitions=numParts;
 	}
 	
+	//manages the heartbeating to send to the master
 	private class Heartbeat extends TimerTask {
 		
 		@Override
@@ -71,6 +72,7 @@ public class ComputeNode implements Runnable{
 		}
 	}
 
+	//handles connections
 	private class ConnectionHandle implements Runnable {
 		private Socket client;
 		
@@ -89,6 +91,7 @@ public class ComputeNode implements Runnable{
 				 Object obj = objIn.readObject();
 				 
 				 //Make sure this message is packed properly
+				 //starts the task specified by the master
 				 if(Task.class.isAssignableFrom(obj.getClass()))
 				 {
 					 Task t = (Task) obj;
@@ -115,8 +118,10 @@ public class ComputeNode implements Runnable{
 		}
 	}
 	
+	//tells the master that a task has been completed
 	public void sendTaskFinish(Task t, StatusUpdate.Type type){
 		try {
+			System.out.println("ComputeNode at: " + server.getInetAddress().getHostName() + ":"+portnum+" completed task " +t.type +" id: " +t.PID);
 			Socket client = new Socket(master.getAddress(),master.getPort());
 			OutputStream out = client.getOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(out);
@@ -134,6 +139,7 @@ public class ComputeNode implements Runnable{
 
 	}
 	
+	//runs a new task t
 	public void startNewTask(Task t){
 		String line;
 		
@@ -163,6 +169,7 @@ public class ComputeNode implements Runnable{
 	    ClassLoader cl = new URLClassLoader(urls);
 	    Class<?> cls;
 	    MapReducer mr=null;
+	    //gets the required files, feeds them to appropriate map/reduce function
 	    try{
 			cls = cl.loadClass(t.mapReduceClass.substring(0, t.mapReduceClass.lastIndexOf(".")));
 			mr=(MapReducer)cls.newInstance();
@@ -188,6 +195,7 @@ public class ComputeNode implements Runnable{
 				 
 				 BufferedReader br = new BufferedReader(new FileReader(input));
 				 
+				 //partitions map data
 				while((line = br.readLine()) != null && !killTask[coreNum]){
 					mapline=mr.map(line);
 					if(mapline!=null)
