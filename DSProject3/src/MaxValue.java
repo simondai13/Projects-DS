@@ -35,8 +35,10 @@ public class MaxValue implements MapReducer{
 
 	@Override
 	public int partition(String s) {
-		// TODO Auto-generated method stub
-		return 0;
+		int val = Integer.parseInt(s.trim());
+		if(val>5)
+			return 0;
+		return 1;
 	}
 
 	

@@ -68,7 +68,7 @@ public class Master implements Runnable{
 		//sort out failed nodes
 		scheduler = new Scheduler(dfsMaster.fileNodes, dfsMaster.fileLocs,mapReduce,numCores, numPartitions);
 		TreeMap<InetSocketAddress,List<Task>> tasks = scheduler.getInitialTasks();
-		synchronized(jobs){
+		synchronized(dfsMaster.fileLocs){
 			for(Entry<InetSocketAddress,List<Task>> e :tasks.entrySet()){
 				jobs.put(new InetSocketAddress(e.getKey().getAddress(),dfsPortToMRPort.get(e.getKey())),new ArrayList<Task>());
 			}
@@ -85,7 +85,7 @@ public class Master implements Runnable{
 		
 		@Override
 		public void run() {
-			synchronized(jobs) {
+			synchronized(dfsMaster.fileLocs) {
 				for (Entry<InetSocketAddress,Boolean> entry : nodeStatus.entrySet())
 				{
 					if(!entry.getValue()  &&activeNodes.contains(entry.getKey()))
@@ -101,7 +101,7 @@ public class Master implements Runnable{
 	}
 	
 	public void handleFailure(InetSocketAddress node){
-		synchronized(jobs){
+		synchronized(dfsMaster.fileLocs){
 			List<Task> tasks= jobs.get(node);
 			for(Task t: tasks){
 				scheduler.addTask(t);
@@ -115,7 +115,7 @@ public class Master implements Runnable{
 	//Check to make sure all running jobs are complete
 	public boolean checkIsCompleted(){
 		boolean done=true;
-		synchronized(jobs){
+		synchronized(dfsMaster.fileLocs){
 			for(List<Task> tasks : jobs.values()){
 				if(!tasks.isEmpty()){
 					done=false;
@@ -140,7 +140,7 @@ public class Master implements Runnable{
 				break;
 			case TERMINATED:
 				Task next= scheduler.getNextTask(stat.node);
-				synchronized(jobs){
+				synchronized(dfsMaster.fileLocs){
 					List<Task> tasks= jobs.get(stat.node);
 					int taskIndex=0;
 					for(int i=0; i< tasks.size(); i++){
@@ -165,7 +165,7 @@ public class Master implements Runnable{
 		mapCanceled=true;
 		//Send messages to all workers to kill all active tasks
 		try{
-			synchronized(jobs){
+			synchronized(dfsMaster.fileLocs){
 			for(Map.Entry<InetSocketAddress,List<Task>> e : jobs.entrySet()){
 				List<Task> tasks = e.getValue();
 				for(Task t: tasks){
@@ -187,7 +187,7 @@ public class Master implements Runnable{
 		}
 		
 		//Clear the jobs
-		synchronized(jobs){
+		synchronized(dfsMaster.fileLocs){
 			for(Map.Entry<InetSocketAddress, List<Task>> j : jobs.entrySet()){
 				jobs.put(j.getKey(), new ArrayList<Task>());
 			}
@@ -291,7 +291,7 @@ public class Master implements Runnable{
 					 		break;
 					 	case QUERY:
 					 		MapReduceState resp = new MapReduceState();
-					 		synchronized(jobs){
+					 		synchronized(dfsMaster.fileLocs){
 						 		resp.activeJobs=jobs;
 						 		resp.activeNodes=activeNodes;
 						 		resp.fileLocs=dfsMaster.fileLocs;

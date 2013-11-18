@@ -48,12 +48,14 @@ public class MasterDFS implements Runnable{
 				 if(line.contains("FILELOCATION")){
 					 String filename = in.readLine();
 					 System.out.println("FileLocation Request made for " + filename);
-					 List<InetSocketAddress> locations = fileLocs.get(filename);
 					 String message = "";
-					 if(locations!=null){
-						 for(InetSocketAddress adr : locations){
-							 message += adr.getHostName()+"\n";
-							 message += adr.getPort()+"\n";
+					 synchronized(fileLocs){
+						 List<InetSocketAddress> locations = fileLocs.get(filename);
+						 if(locations!=null){
+							 for(InetSocketAddress adr : locations){
+								 message += adr.getHostName()+"\n";
+								 message += adr.getPort()+"\n";
+							 }
 						 }
 					 }
 					 out.print(message);
@@ -68,7 +70,9 @@ public class MasterDFS implements Runnable{
 						int hostPort = Integer.parseInt(in.readLine());
 						locations.add(new InetSocketAddress(hostadr, hostPort));
 					}
-					fileLocs.put(filename, locations);
+					synchronized(fileLocs){
+						fileLocs.put(filename, locations);
+					}
 				 //Node is requesting all locations so that the MapReduce.class can be copied to all nodes
 				 }else if (line.contains("NODELOCATIONS")){
 						while((line=in.readLine())!=null){
@@ -109,8 +113,10 @@ public class MasterDFS implements Runnable{
 						 i++;
 					 }
 					 out.flush();
-					 fileLocs.put(filename, newLocs);
-				 }
+					 synchronized(fileLocs){
+						 fileLocs.put(filename, newLocs);
+					 }
+				}
 				 
 				 out.close();
 				 in.close();
