@@ -50,12 +50,10 @@ public class DFSNode implements Runnable{
 			out.println("NEWFILEREQ\n" + filename);
 			out.flush();
 			String res="";
-			System.out.println("WHAT");
 			while((res=in.readLine())!=null){
 				int port = Integer.parseInt(in.readLine());
 				destinations.add(new InetSocketAddress(res,port));
 			}
-			System.out.println("Works");
 			in.close();
 			out.close();
 			master.close();

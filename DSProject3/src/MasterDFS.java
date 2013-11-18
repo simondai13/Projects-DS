@@ -47,7 +47,7 @@ public class MasterDFS implements Runnable{
 				 //node is receiving a request for a file
 				 if(line.contains("FILELOCATION")){
 					 String filename = in.readLine();
-					 System.out.println("FileLocation for" + filename);
+					 System.out.println("FileLocation Request made for " + filename);
 					 List<InetSocketAddress> locations = fileLocs.get(filename);
 					 String message = "";
 					 if(locations!=null){
@@ -68,7 +68,6 @@ public class MasterDFS implements Runnable{
 						int hostPort = Integer.parseInt(in.readLine());
 						locations.add(new InetSocketAddress(hostadr, hostPort));
 					}
-					System.out.println("Host made aware of file:"+ filename);
 					fileLocs.put(filename, locations);
 				 //Node is requesting all locations so that the MapReduce.class can be copied to all nodes
 				 }else if (line.contains("NODELOCATIONS")){
@@ -89,16 +88,13 @@ public class MasterDFS implements Runnable{
 				 //addresses
 				 }else if (line.contains("NEWFILEREQ")){
 					 
-					 System.out.println("WORKS777777777777777777777777777");
 					 String filename = in.readLine();
 					 int r = (int) (Math.random() *master.activeNodes.size());
-					 System.out.println("WORKS777777777777777777777773q43477");
 					 int j=replFactor-1; //We already have a copy on the FILEREQ node
 					 //it is possible we lost enough nodes that the replication factor can't be satisfied
 					 j=Math.min(j,master.activeNodes.size()-1);
 					 int i=0;
 					 List<InetSocketAddress> newLocs = new ArrayList<InetSocketAddress>();
-					 System.out.println("B$444444444444444444");
 					 while(i<j){
 						 InetSocketAddress n=fileNodes.get((r+i)%fileNodes.size());
 						 if(!n.equals((InetSocketAddress) client.getRemoteSocketAddress()) &&
@@ -112,7 +108,6 @@ public class MasterDFS implements Runnable{
 						 
 						 i++;
 					 }
-					 System.out.println("l888888888888");
 					 out.flush();
 					 fileLocs.put(filename, newLocs);
 				 }

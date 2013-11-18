@@ -38,7 +38,6 @@ public class Main {
 		}
     	if(mrm.getStatus().isDone){
     		System.out.println("Done");
-    		System.out.println(mrm.getStatus().activeJobs);
     	}
     }
 }

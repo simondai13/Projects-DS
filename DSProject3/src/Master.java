@@ -202,7 +202,6 @@ public class Master implements Runnable{
 		
 		try
 		{
-			System.out.println("Sending Task " + t.PID);
 			if(dfsPortToMRPort==null){
 				System.out.println("No node configuration");
 			}
@@ -306,7 +305,6 @@ public class Master implements Runnable{
 						 
 					 }
 				 } else if(MasterConfiguration.class.isAssignableFrom(obj.getClass())){
-					 System.out.println("Node configuration recieved");
 					 MasterConfiguration cfg = (MasterConfiguration) obj;
 					 dfsPortToMRPort= cfg.dfsToMRports;
 					 for(Map.Entry<InetSocketAddress, Integer> e: dfsPortToMRPort.entrySet()){

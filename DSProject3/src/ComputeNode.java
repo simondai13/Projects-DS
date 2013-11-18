@@ -169,7 +169,7 @@ public class ComputeNode implements Runnable{
 			mr.equals(mr);
 		
 		
-			 System.out.println("Task " + t.PID + " of type " + t.type + " Started");
+			 System.out.println("Task " + t.PID + " of type " + t.type + " Started on Node: " + server.getInetAddress().getHostName() + " port: " +portnum );
 			 
 			 String mapline;
 			if(t.type==Task.Type.MAP){
@@ -232,10 +232,8 @@ public class ComputeNode implements Runnable{
 				 BufferedWriter bw=new BufferedWriter(new FileWriter(out));
 				 
 				 for(int i=0; i<t.files.size(); i++){
-					 System.out.println(inputs[i]);
 					 BufferedReader br =new BufferedReader(new FileReader(inputs[i]));
 					 while((line = br.readLine()) !=null && !killTask[coreNum]){
-						 System.out.println(line);
 							records = mr.reduce(records,line);
 					 }
 					 br.close();

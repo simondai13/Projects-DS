@@ -53,7 +53,6 @@ public class DFSUtil {
 				Socket fileReq = new Socket(fileLoc.getHostName(), fileLoc.getPort());
 				BufferedReader in = new BufferedReader(new InputStreamReader(fileReq.getInputStream()));
 				PrintWriter out = new PrintWriter(fileReq.getOutputStream());
-				System.out.println("getting file");
 				out.write(message);
 				out.flush();
 				int index= filename.lastIndexOf("/");

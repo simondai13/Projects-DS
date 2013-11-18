@@ -5,23 +5,11 @@ public class Histogram implements MapReducer {
 	
 	@Override
 	public String map(String line) {
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		return line + " 1";
 	}
 
 	@Override
 	public List<String> reduce(List<String> lines, String line) {
-		try {
-			Thread.sleep(300);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
 		String[] record = line.split(" ");
 		String word = record[0];
