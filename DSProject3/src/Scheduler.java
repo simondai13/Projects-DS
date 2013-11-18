@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-
+//This class optimizes the distribution of work, given a system description
 public class Scheduler {
 	private TreeMap<String,List<InetSocketAddress>> fileLocs;
 	private String[] mapFiles;

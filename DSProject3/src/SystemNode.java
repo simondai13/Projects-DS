@@ -19,6 +19,7 @@ public class SystemNode implements Runnable{
 		server = new ServerSocket(portnum);
 	}
 
+	//handles connections
 	private class ConnectionHandle implements Runnable {
 		private Socket client;
 		
