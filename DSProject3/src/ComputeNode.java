@@ -235,12 +235,11 @@ public class ComputeNode implements Runnable{
 				 BufferedWriter bw=new BufferedWriter(new FileWriter(out));
 				 
 				 for(int i=0; i<t.files.size(); i++){
+					 System.out.println(inputs[i]);
 					 BufferedReader br =new BufferedReader(new FileReader(inputs[i]));
-					 System.out.println(br.toString());
-					 System.out.println(br.readLine());
 					 while((line = br.readLine()) !=null && !killTask[coreNum]){
 						 System.out.println(line);
-							records = mr.reduce(records,line);
+							//records = mr.reduce(records,line);
 					 }
 					 br.close();
 				 }
