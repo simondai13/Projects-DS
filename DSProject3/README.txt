@@ -3,7 +3,7 @@ Our code has been precompiled to have .class files in /bin.
 So, to run our example programs:
 (from root directory)
 this is for each potential node in the system
-java -cp ./bin MainNode
+java -cp ./bin MainNode [Port number]
 Then, for each node, ensure that the config file has the correct locations of each machine running MainNode
 then, from any machine, run:
 java -cp ./bin MainMaxValue
