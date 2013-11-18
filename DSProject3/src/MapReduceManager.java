@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-
-
 //primary manager class, to be used by application programmer
 public class MapReduceManager {
 	
@@ -41,12 +39,14 @@ public class MapReduceManager {
 		masterNodePort=0;
 		masterDFSPort=0;
 	}
+	//starts a map reduce after config
 	public void startMapReduce(final Class<?> pClass){
 		System.out.println("\n==Starting a map reduce==\n");
 	    final String location, name;
 	    name = pClass.getName().replaceAll("\\.", "/") + ".class";
 	    location = ClassLoader.getSystemResource(name).getPath();
 
+	    //uses master to coordinate starting the map reduce
 	    if(masterLocation!=null)
 	    {
 	    	ArrayList<InetSocketAddress> destinations = new ArrayList<InetSocketAddress>();
@@ -123,6 +123,7 @@ public class MapReduceManager {
 		}
 	}
 	
+	//stops the map reduce operation in progress
 	public void killMapReduce(){
 		Socket client;
 		try {
@@ -150,6 +151,7 @@ public class MapReduceManager {
 		}
 		
 	}
+	//gets the current status of the map reduce
 	public MapReduceState getStatus(){
 		Socket client;
 		MapReduceState resp=null;
@@ -179,6 +181,7 @@ public class MapReduceManager {
 		return resp;
 	}
 	
+	//config/bootstrap
 	public void configMapReduce(File configFile){
 		
 		BufferedReader br = null;
@@ -191,6 +194,8 @@ public class MapReduceManager {
 		try {
 			br = new BufferedReader(new FileReader(configFile));
 			String line = "";
+			
+			//reads/parses config file
 			while((line = br.readLine()) != null){
 				
 				int eqIndex = line.indexOf('=');

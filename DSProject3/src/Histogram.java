@@ -1,14 +1,17 @@
 
 import java.util.List;
 
+//classical word count example
 public class Histogram implements MapReducer {
 	
 	@Override
+	//adds a 1 (single count)
 	public String map(String line) {
 		return line + " 1";
 	}
 
 	@Override
+	//simply increments the counter if duplicate word, otherwise adds on the line
 	public List<String> reduce(List<String> lines, String line) {
 		
 		String[] record = line.split(" ");
