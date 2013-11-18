@@ -138,7 +138,6 @@ public class DFSNode implements Runnable{
 					PrintWriter fileWriter = new PrintWriter(fileFolder+ "/"+ f);
 					String fileLine = "";
 					while((fileLine = in.readLine()) != null){
-						
 						fileWriter.println(fileLine);
 					}
 					fileWriter.close();

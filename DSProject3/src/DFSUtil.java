@@ -56,7 +56,10 @@ public class DFSUtil {
 				System.out.println("getting file");
 				out.write(message);
 				out.flush();
-				File tempCopy = new File(folder +"/tmp/"+filename.substring(0,filename.lastIndexOf("/")));
+				int index= filename.lastIndexOf("/");
+				if(index==-1)
+					index=0;
+				File tempCopy = new File(folder +"/tmp/"+filename.substring(index+1,filename.length()));
 				tempCopy.createNewFile();
 				String line="";
 				PrintWriter out2 = new PrintWriter(new FileWriter(tempCopy));

@@ -19,4 +19,4 @@ PARTICIPANTPORT = 2353
 COMPUTEPORT = 2354
 COMPUTEDFSPORT = 2355
 REPLICATION = 2
-DATAFILE = C:\Users\Kenny\git\Projects-DS\DSProject3\testconfig.txt
+DATAFILE = C:\Users\Kenny\git\Projects-DS\DSProject3\TestNumbers.txt

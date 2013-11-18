@@ -219,37 +219,35 @@ public class ComputeNode implements Runnable{
 			}
 			else {
 				File inputs[] = new File[t.files.size()];
-				BufferedReader brs[] = new BufferedReader[numPartitions];
 				
 				 for(int i =0; i<t.files.size(); i++){
-					 inputs[i]=DFSUtil.getFile(this.dfs.masterLoc, t.files.get(i),dfs.fileFolder);
 					 //This means that 1 of the map results are lost, we just have to back out to make sure nodes are
 					 //Available to service the map
-					 if(inputs[i]==null){
+					 if(DFSUtil.getFile(this.dfs.masterLoc, t.files.get(i),dfs.fileFolder)==null){
 						 sendTaskFinish(t,StatusUpdate.Type.FAILED);
 						 return;
 					 }
+					 inputs[i]=new File(dfs.fileFolder +"/"+ t.files.get(i));
 				 }
 				 line=null;
 				 List<String> records = new ArrayList<String>();
 				 File out= new File(dfs.fileFolder +"/" + "result-" + t.PID + ".txt");
 				 BufferedWriter bw=new BufferedWriter(new FileWriter(out));
 				 
-				 for(int i=0; i<brs.length; i++){
-					 brs[i]=new BufferedReader(new FileReader(inputs[i]));
-					 
-					 while((line = brs[i].readLine()) !=null && !killTask[coreNum]){
+				 for(int i=0; i<t.files.size(); i++){
+					 BufferedReader br =new BufferedReader(new FileReader(inputs[i]));
+					 System.out.println(br.toString());
+					 System.out.println(br.readLine());
+					 while((line = br.readLine()) !=null && !killTask[coreNum]){
+						 System.out.println(line);
 							records = mr.reduce(records,line);
-					 }	
+					 }
+					 br.close();
 				 }
 
 				 for(String r : records){
 					 bw.write(r);
 					 bw.newLine();
-				 }
-				 
-				 for(int i=0; i<brs.length; i++){
-					 brs[i].close();
 				 }
 				 bw.close();
 				 System.out.println("HELLLLLLLLLLLLLLLLLLLLLO");
