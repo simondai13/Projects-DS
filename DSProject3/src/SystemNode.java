@@ -17,6 +17,7 @@ public class SystemNode implements Runnable{
 	public SystemNode(int portnum) throws IOException{
 		
 		server = new ServerSocket(portnum);
+		System.out.println(server.getInetAddress().getHostAddress());
 	}
 
 	//handles connections
