@@ -23,7 +23,7 @@ public class Main {
     	t5.start();
   
     	MapReduceManager mrm = new MapReduceManager();
-    	mrm.configMapReduce(new File("testconfig.txt"));
+    	mrm.configMapReduce(new File("confighistogram.txt"));
     	mrm.startMapReduce(Histogram.class);
     	//mrm.killMapReduce();
     	
