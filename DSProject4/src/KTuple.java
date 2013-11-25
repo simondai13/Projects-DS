@@ -1,7 +1,4 @@
-import java.util.List;
-
-
-public class KTuple implements Comparable{
+public class KTuple implements Comparable<KTuple>{
 
 	
 	private int k;
@@ -12,9 +9,10 @@ public class KTuple implements Comparable{
 		
 		this.k = k;
 		String[] split = (s.replaceAll("[()]", "")).split(",");
+		values = new double[k];
 		for(int i = 0; i < k; i++){
-			
-			values[i] = Double.parseDouble(split[i]);
+			String num = split[i].trim();
+			values[i] = Double.parseDouble(num);
 		}
 	}
 	public KTuple(double[] point){
@@ -36,9 +34,7 @@ public class KTuple implements Comparable{
 	}
 
 	@Override
-	public int compareTo(Object otherPoint) {
-
-		KTuple other = (KTuple)otherPoint;
+	public int compareTo(KTuple other) {
 		
 		if(k > other.k)
 			return 1;
@@ -47,9 +43,9 @@ public class KTuple implements Comparable{
 		
 		for(int i  = 0; i < k; i++){
 			
-			if(values[i] > other.values[i])
+			if(values[i] > other.values[i] + .01)
 				return 1;
-			else if(values[i] < other.values[i])
+			else if(values[i] < other.values[i] - .01)
 				return -1;
 		}
 		return 0;

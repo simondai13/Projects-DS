@@ -17,7 +17,7 @@ public class SequentialKMeans {
 	//args is of the form:
 	//args[0] = number of clusters (k)
 	//    [1] = d, R^d (number of dimensions)
-	//    [2] = file containing points of the form (x1, x2, ..., xd)
+	//    [2] = file containing points of the form (x1, x2, ..., xd), separated by a empty line
 	//    [3] = output file
 	public static void main(String [] args) throws IOException{
 		
@@ -26,6 +26,8 @@ public class SequentialKMeans {
 		int dimensions = Integer.parseInt(args[1]);
 		File dataFile = new File(args[2]);
 		File outFile = new File(args[3]);
+		if(!outFile.exists())
+			outFile.createNewFile();
 		
 		List<KTuple> points = new ArrayList<KTuple>();
 		
@@ -33,7 +35,9 @@ public class SequentialKMeans {
 		String line = "";
 		while((line = readData.readLine()) != null){
 			
-			points.add(new KTuple(dimensions, line));
+			if(!line.equals("")){
+				points.add(new KTuple(dimensions, line));
+			}
 		}
 		readData.close();
 		
@@ -87,17 +91,21 @@ public class SequentialKMeans {
 				clusters.put(bestCentroid, tempList);
 			}
 			
+			System.out.println(clusters);
 			//update centroids, see if improvement is big enough
 			List<KTuple> newCentroids = new ArrayList<KTuple>();
 			for(KTuple centroid : centroids){
 				
+				System.out.println(centroid);
 				double[] newCentroidContent = new double[centroid.getK()];
-				List<KTuple> cluster = clusters.get(centroid);
-				int numPoints = cluster.size();
+				List<KTuple> clusterPoints = clusters.get(centroid);
+
+				int numPoints = clusterPoints.size();
+					
 				for(int i = 0; i < centroid.getK(); i++){
 					
 					double sum = 0;
-					for(KTuple p : cluster){
+					for(KTuple p : clusterPoints){
 						
 						sum+=p.getValue(i);
 					}
