@@ -13,6 +13,7 @@ import java.util.TreeMap;
 
 public class SequentialKMeans {
 
+	public static double IMPROVEMENT_MARGIN = .1; 
 	
 	//args is of the form:
 	//args[0] = number of clusters (k)
@@ -48,6 +49,7 @@ public class SequentialKMeans {
 	
 	public static void KMeans(int numClusters, List<KTuple> points, File out) throws FileNotFoundException{
 		
+		long startTime = System.currentTimeMillis();
 		//initialize clusters
 		
 		//we will (arbitrarily) choose k points, by shuffling the list and taking the first k points.
@@ -57,16 +59,18 @@ public class SequentialKMeans {
 			
 			centroids.add(points.get(i));
 		}
+		
+		//System.out.println("INIT: " + centroids); 
 		int mu = 0;
 		boolean improvement = true;
 
-		Map<KTuple, List<KTuple>> clusters = new TreeMap<KTuple, List<KTuple>>();
+		Map<KTuple, List<KTuple>> clusters = null;
 		
 		//run algorithm
 		while(improvement){
 			improvement = false;
 			++mu;
-			
+			clusters = new TreeMap<KTuple, List<KTuple>>();
 			//assign each point to the appropriate cluster
 			for(KTuple p : points){
 
@@ -77,6 +81,7 @@ public class SequentialKMeans {
 					double distance = euclideanDistance(p, centroid);
 					if(distance < bestDistance){
 						
+						bestDistance = distance;
 						bestCentroid  = centroid;
 					}
 				}
@@ -88,20 +93,24 @@ public class SequentialKMeans {
 				else
 					tempList = clusters.get(bestCentroid);
 				tempList.add(p);
+				//System.out.println("Best Centroid: " + bestCentroid + " for point " + p + " with distance " + bestDistance);
 				clusters.put(bestCentroid, tempList);
 			}
 			
-			System.out.println(clusters);
+			//System.out.println("Cluster Centers: " + clusters.keySet());
 			//update centroids, see if improvement is big enough
+
+			Map<KTuple, List<KTuple>> newClusters = new TreeMap<KTuple, List<KTuple>>();
 			List<KTuple> newCentroids = new ArrayList<KTuple>();
 			for(KTuple centroid : centroids){
 				
-				System.out.println(centroid);
+				//System.out.println(centroid);
 				double[] newCentroidContent = new double[centroid.getK()];
 				List<KTuple> clusterPoints = clusters.get(centroid);
 
 				int numPoints = clusterPoints.size();
 					
+				
 				for(int i = 0; i < centroid.getK(); i++){
 					
 					double sum = 0;
@@ -113,10 +122,12 @@ public class SequentialKMeans {
 				}
 				KTuple newCentroid = new KTuple(newCentroidContent);
 				newCentroids.add(newCentroid);
-				if(euclideanDistance(centroid, newCentroid) > 1)
+				newClusters.put(newCentroid, clusters.get(centroid));
+				if(euclideanDistance(centroid, newCentroid) > IMPROVEMENT_MARGIN)
 					improvement = true;
 			}
 			centroids = newCentroids;
+			clusters = newClusters;
 		}
 		
 		
@@ -124,12 +135,20 @@ public class SequentialKMeans {
 		PrintWriter fileOut = new PrintWriter(out);
 		fileOut.println("K-Means iterations: " + mu + "\n");
 		for(KTuple centroid : centroids){
-			
+
 			fileOut.println("Cluster Mean: " + centroid);
-			fileOut.println("Cluster Points: " + clusters.get(centroid));
+			List<KTuple> cluster = clusters.get(centroid);
+			fileOut.println("Number of Cluster Points: " + cluster.size());
+			fileOut.println("Cluster Points: " + cluster);
 			fileOut.println();
 		}
+
+		long runtime = System.currentTimeMillis() - startTime;
+		
+		fileOut.println("Runtime (in milliseconds): " + runtime);
 		fileOut.close();
+		
+		System.out.println("Runtime (in milliseconds): " + runtime);
 	}
 	
 	public static double euclideanDistance(KTuple p1, KTuple p2){
@@ -140,9 +159,9 @@ public class SequentialKMeans {
 			return -1;
 		for(int i = 0; i < k; i ++){
 			
-			sum += Math.pow((p1.getValue(i) - p2.getValue(i)), 2);
+			sum += (p1.getValue(i) - p2.getValue(i))*(p1.getValue(i) - p2.getValue(i));
 		}
-		
+
 		return Math.sqrt(sum);
 	}
 	

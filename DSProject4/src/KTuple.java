@@ -43,9 +43,9 @@ public class KTuple implements Comparable<KTuple>{
 		
 		for(int i  = 0; i < k; i++){
 			
-			if(values[i] > other.values[i] + .01)
+			if(values[i] > other.values[i] + .001)
 				return 1;
-			else if(values[i] < other.values[i] - .01)
+			else if(values[i] < other.values[i] - .001)
 				return -1;
 		}
 		return 0;
