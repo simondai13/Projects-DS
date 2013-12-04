@@ -13,7 +13,7 @@ import java.util.TreeMap;
 
 public class SequentialKMeans {
 
-	public static double IMPROVEMENT_MARGIN = .1; 
+	public static double IMPROVEMENT_MARGIN = .00000001; 
 	
 	//args is of the form:
 	//args[0] = number of clusters (k)
@@ -130,6 +130,8 @@ public class SequentialKMeans {
 			clusters = newClusters;
 		}
 		
+
+		long runtime = System.currentTimeMillis() - startTime;
 		
 		//write result to file
 		PrintWriter fileOut = new PrintWriter(out);
@@ -143,8 +145,6 @@ public class SequentialKMeans {
 			fileOut.println();
 		}
 
-		long runtime = System.currentTimeMillis() - startTime;
-		
 		fileOut.println("Runtime (in milliseconds): " + runtime);
 		fileOut.close();
 		
