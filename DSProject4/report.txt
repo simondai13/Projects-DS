@@ -1,0 +1,40 @@
+Report
+sdai, kpayson
+
+Design Decisions/Clarifications:
+
+First, we separated the K-Means algorithms for the points and the DNA data sets into separate classes, because they take different arguments.
+General K-Means: 
+For both data sets, we first parse all of the input data (this portion is not counted in the runtime). Then, we simply run K-Means as defined. We choose the starting centroids by randomly selecting k points/strands, and using those as initial centroids. Then, we form the clusters, and recompute the centroids, repeating until the centroid does not change by more than some constant factor (explained in more detail below).
+Points K-Means Specifications:
+The stopping condition we use for the points is when the centroids move by less than some value epsilon (~.000001), so that we run until we make essentially no improvement in the centroids.
+DNA K-Means Specifications:
+To generate the median (centroid) strand, at each index we simply take the most common character at that index over all strands in that centroid's cluster. 
+The stopping condition for this algorithm is when every centroid remains in the same place for consecutive iterations (no improvement).
+
+Parallel Implementation Design:
+
+The overall parallelism of our algorithm comes from the splitting of the cluster finding (matching each point/strand to its closest centroid) and the centroid realignment (after readjusting clusters, compute the new centroid location). Both of these tasks can be done on arbitrary cores/processes, so long as we use MP to combine the results. So, for cluster matching, we give each node some subset of points/strands, and have it compute the best centroid for each point in the subset it handles. For centroid realignment, we give each node some subset of clusters, and have it compute the new centroid for each cluster. Then, we give the results of these parallel tasks back to the master and have it combine them.
+
+//Ken expand this IE talk about specific stuff like master, message passing etc, also check ^
+
+Data Generation:
+To generate data sets for the point clusters, we used the provide python code to generate our data sets. We wrote another class for data generation of dna strands. The class takes a bunch of arguments like number of intended clusters, number of points per cluster, and length of strands. Then, it randomly generates centroids, and randomly varies the centroids so that they form clusters of strands.
+
+Analysis:
+
+DO THURS
+
+
+Running Code:
+To run our data set generator (dna), simply complile the DNAGenerator.java code using javac, then run with:
+java DNAGenerator [strandLength] [numClusters] [strandsPerCluster] [outputFile]
+
+To run the sequential versions of K-Means, compile the code with javac, then run with:
+Points: java SequentialKMeans [numClusters] [dimensions (2)] [inputFile] [outputFile]
+DNA: java SequentialKMeansDNA [numClusters] [inputFile] [outputFile]
+
+//Ken check this
+To run the parallel versions of K-Means, compile the code with mpijavac, then run with:
+Points: mpirun -np [numProcesses] MPIKmeans [numClusters] [dimensions] [numPoints] [numProcesses] [inputFile] [outputFile]
+DNA: mpirun -np [numProcesses] ???? [numClusters] [dimensions] [???] [numProcesses] [inputFile] [outputFile]
