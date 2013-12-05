@@ -27,6 +27,8 @@ public class MPIKMeans {
   public static int numPoints;
   public static int partSize; //Number of points in a partion
 	public static int lastPartSize; //Last partition has points lost to rounding
+	public static int iters;
+	public static long startTime; 
 
 	//args is of the form:
 	//args[0] = number of clusters (k)
@@ -75,6 +77,9 @@ public class MPIKMeans {
 		MPI.Init(args);
 		int rank=MPI.COMM_WORLD.Rank();
 		
+		iters = 0;
+		startTime = System.currentTimeMillis();
+		
 		//This will be the master
 		//The master is responsible for updating and broadcasting the k means
 		if(rank == 0){
@@ -102,6 +107,7 @@ public class MPIKMeans {
 			
 			
 			while(improvement[0]){
+				iters++;
 				double[] centerValues = new double[numClusters*dimensions];
 				int[] centerCounts = new int[numClusters];
 				MPI.COMM_WORLD.Bcast(centers,0,centers.length,MPI.DOUBLE,0);
@@ -249,6 +255,9 @@ public class MPIKMeans {
 	}
 		
 	public static void writeResult(String filename, List<List<KTuple>> groupings, List<KTuple> kmeans){
+		
+		long runtime = startTime - System.currentTimeMillis();
+		
 		//write result to file
 		File outFile = new File("tmpout.txt");
     try{
@@ -264,7 +273,7 @@ public class MPIKMeans {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		fileOut.println("K-Means iterations: " + 1 + "\n");
+		fileOut.println("K-Means iterations: " + iters + "\n");
 		int i=0;
 		for(KTuple centroid : kmeans){
 
@@ -275,8 +284,6 @@ public class MPIKMeans {
 			fileOut.println();
 			i++;
 		}
-
-		long runtime = System.currentTimeMillis() - System.currentTimeMillis();
 		
 		fileOut.println("Runtime (in milliseconds): " + runtime);
 		fileOut.close();
