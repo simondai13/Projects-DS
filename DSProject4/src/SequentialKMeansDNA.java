@@ -13,7 +13,7 @@ import java.util.TreeMap;
 
 public class SequentialKMeansDNA {
 
-	public static int IMPROVEMENT_MARGIN = 1; 
+	public static int IMPROVEMENT_MARGIN = 0; 
 	
 	//args is of the form:
 	//args[0] = number of clusters (k)

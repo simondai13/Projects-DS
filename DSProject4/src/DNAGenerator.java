@@ -36,7 +36,8 @@ public class DNAGenerator {
 			String median = "";
 			for(int k = 0; k < length; k++)
 				median += randChar();
-			System.out.println("MEDIAN: + " + median);
+			System.out.println("made one");
+			//System.out.println("MEDIAN: + " + median);
 			
 			for(int j = 0; j < numStrings; j++){
 				
@@ -63,7 +64,7 @@ public class DNAGenerator {
 		for(String s : sequences){
 			
 			pw.println(s);
-			System.out.println(s);
+			//System.out.println(s);
 		}
 		pw.close();
 	}
