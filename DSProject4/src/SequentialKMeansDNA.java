@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-
+//Runs K-Means on DNA data
 public class SequentialKMeansDNA {
 
 	public static int IMPROVEMENT_MARGIN = 0; 
@@ -43,8 +43,7 @@ public class SequentialKMeansDNA {
 		KMeans (numClusters, sequences, outFile);
 	}
 	
-	
-	
+	//Runs algorithm
 	public static void KMeans(int numClusters, List<String> sequences, File out) throws FileNotFoundException{
 		
 		long startTime = System.currentTimeMillis();
@@ -74,6 +73,7 @@ public class SequentialKMeansDNA {
 
 				int bestDistance = Integer.MAX_VALUE;
 				String bestCentroid = null;
+				//gets best centroid
 				for(String centroid : centroids){
 					
 					int distance = dnaDistance(s, centroid);
@@ -91,11 +91,8 @@ public class SequentialKMeansDNA {
 				else
 					tempList = clusters.get(bestCentroid);
 				tempList.add(s);
-				//System.out.println("Best Centroid: " + bestCentroid + " for point " + p + " with distance " + bestDistance);
 				clusters.put(bestCentroid, tempList);
 			}
-			
-			//System.out.println("Cluster Centers: " + clusters.keySet());
 			
 			//update centroids, see if improvement is big enough
 
@@ -103,15 +100,12 @@ public class SequentialKMeansDNA {
 			List<String> newCentroids = new ArrayList<String>();
 			
 			for(String centroid : centroids){
-				
-				//System.out.println(centroid);
 
 				List<String> clusterSequences = clusters.get(centroid);
 
-				int numSequences = clusterSequences.size();
-					
 				String newCentroid = "";
 				
+				//computes the new centroid (average)
 				for(int i = 0; i < centroid.length(); i++){
 					
 					int aCount=0, gCount=0, tCount=0, cCount=0;;
@@ -168,7 +162,7 @@ public class SequentialKMeansDNA {
 		System.out.println("Runtime (in milliseconds): " + runtime);
 	}
 	
-	
+	//returns the diff between a and b
 	public static int dnaDistance(String a, String b){
 		
 		int length = Math.min(a.length(), b.length());

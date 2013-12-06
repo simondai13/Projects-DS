@@ -1,9 +1,9 @@
+//represents a k-dimensional point
 public class KTuple implements Comparable<KTuple>{
 
 	
 	private int k;
 	private double[] values;
-	
 	
 	public KTuple(int k, String s){
 		

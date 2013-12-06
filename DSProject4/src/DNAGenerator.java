@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 
+//generates DNA data
 public class DNAGenerator {
 
 	//variance from median
@@ -69,7 +70,7 @@ public class DNAGenerator {
 		pw.close();
 	}
 	
-	
+	//returns a random DNA character
 	public static char randChar(){
 		
 		int rand = (int) (Math.random()*4);

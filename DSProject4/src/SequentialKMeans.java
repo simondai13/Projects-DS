@@ -10,9 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-
+//Runs K-Means on a set of points
 public class SequentialKMeans {
 
+	//runs until the variance between centroids is less than this
 	public static double IMPROVEMENT_MARGIN = .00000001; 
 	
 	//args is of the form:
@@ -45,8 +46,7 @@ public class SequentialKMeans {
 		KMeans (numClusters, points, outFile);
 	}
 	
-	
-	
+	//runs the algorithm
 	public static void KMeans(int numClusters, List<KTuple> points, File out) throws FileNotFoundException{
 		
 		long startTime = System.currentTimeMillis();
@@ -76,6 +76,7 @@ public class SequentialKMeans {
 
 				double bestDistance = Double.MAX_VALUE;
 				KTuple bestCentroid = null;
+				//gets closest centroid
 				for(KTuple centroid : centroids){
 					
 					double distance = euclideanDistance(p, centroid);
@@ -93,11 +94,9 @@ public class SequentialKMeans {
 				else
 					tempList = clusters.get(bestCentroid);
 				tempList.add(p);
-				//System.out.println("Best Centroid: " + bestCentroid + " for point " + p + " with distance " + bestDistance);
 				clusters.put(bestCentroid, tempList);
 			}
 			
-			//System.out.println("Cluster Centers: " + clusters.keySet());
 			//update centroids, see if improvement is big enough
 
 			Map<KTuple, List<KTuple>> newClusters = new TreeMap<KTuple, List<KTuple>>();
@@ -151,6 +150,7 @@ public class SequentialKMeans {
 		System.out.println("Runtime (in milliseconds): " + runtime);
 	}
 	
+	//returns the euclidean distance from p1 to p2
 	public static double euclideanDistance(KTuple p1, KTuple p2){
 		
 		double sum = 0;
